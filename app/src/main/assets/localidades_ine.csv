@@ -1,0 +1,672 @@
+departamento_codigo;departamento;localidad_codigo_2023;localidad_2023
+01;Montevideo;01020;Montevideo
+01;Montevideo;01900;Rural
+02;Artigas;02020;Artigas
+02;Artigas;02021;Bella Unión
+02;Artigas;02522;Tomás Gomensoro
+02;Artigas;02621;Baltasar Brum
+02;Artigas;02721;Bernabé Rivera
+02;Artigas;02724;Franquia
+02;Artigas;02725;Sequeira
+02;Artigas;02822;Coronado
+02;Artigas;02823;Cuareim
+02;Artigas;02824;Cuaró
+02;Artigas;02826;Javier de Viana
+02;Artigas;02827;La Bolsa
+02;Artigas;02830;Pintadito
+02;Artigas;02831;Port. de Hierro y Campodónico
+02;Artigas;02833;Mones Quintela
+02;Artigas;02900;Rural
+02;Artigas;02925;Cainsa
+02;Artigas;02927;Paso Campamento
+02;Artigas;02934;Diego Lamas
+02;Artigas;02945;Paso Farías
+02;Artigas;02952;Rincón de Pacheco
+02;Artigas;02957;Topador
+02;Artigas;02959;Colonia Palma
+02;Artigas;02963;Calnú
+02;Artigas;02964;San Gregorio
+03;Canelones;03024;Paso Carrasco
+03;Canelones;03221;Las Piedras
+03;Canelones;03320;Canelones
+03;Canelones;03321;La Paz
+03;Canelones;03322;Pando
+03;Canelones;03323;Santa Lucía
+03;Canelones;03324;Piedras de Afilar
+03;Canelones;03325;Cumbres de Carrasco
+03;Canelones;03326;Haras del Lago
+03;Canelones;03327;Quinta Los Horneros
+03;Canelones;03328;Las Higueritas
+03;Canelones;03329;Sofía Santos
+03;Canelones;03330;Huerta de los Horneros
+03;Canelones;03332;La Horqueta
+03;Canelones;03333;Barrio La Cina Cina
+03;Canelones;03334;Carrasco del Sauce
+03;Canelones;03335;Cuchilla de Sierra
+03;Canelones;03336;El Colorado
+03;Canelones;03337;Las Brujas
+03;Canelones;03338;Cuchilla Verde
+03;Canelones;03339;Costa de Pedernal
+03;Canelones;03340;Cerámicas Salinas
+03;Canelones;03341;Barra de Pedrera
+03;Canelones;03342;Villa Los Nolitos
+03;Canelones;03343;18 de Mayo *
+03;Canelones;03344;La Juana
+03;Canelones;03345;Casahona
+03;Canelones;03346;La Cantera
+03;Canelones;03347;El Monte
+03;Canelones;03348;Los Tilos
+03;Canelones;03349;Pilar de los Horneros
+03;Canelones;03421;Progreso
+03;Canelones;03422;San Ramón
+03;Canelones;03521;Barros Blancos
+03;Canelones;03523;Colonia Nicolich
+03;Canelones;03524;Joaquín Suárez
+03;Canelones;03526;Santa Rosa
+03;Canelones;03527;Sauce
+03;Canelones;03528;Tala
+03;Canelones;03529;Villa Crespo y San Andrés
+03;Canelones;03530;Fracc. Con. Andaluz y R.84
+03;Canelones;03621;Atlántida
+03;Canelones;03622;Estación Atlántida
+03;Canelones;03624;Los Cerrillos
+03;Canelones;03625;Empalme Olmos
+03;Canelones;03626;Migues
+03;Canelones;03627;Parque del Plata
+03;Canelones;03628;San Bautista
+03;Canelones;03629;San Jacinto
+03;Canelones;03630;Dr. Francisco Soca
+03;Canelones;03631;Toledo
+03;Canelones;03632;Montes
+03;Canelones;03633;San José de Carrasco
+03;Canelones;03634;Fracc. sobre Ruta 74
+03;Canelones;03721;Aguas Corrientes
+03;Canelones;03722;Barra de Carrasco
+03;Canelones;03723;Juanicó
+03;Canelones;03724;La Floresta
+03;Canelones;03725;Estación La Floresta 
+03;Canelones;03726;Las Toscas
+03;Canelones;03727;Parque Carrasco
+03;Canelones;03729;Salinas
+03;Canelones;03730;San Antonio
+03;Canelones;03732;Solymar
+03;Canelones;03733;Villa Aeroparque
+03;Canelones;03823;Castellanos
+03;Canelones;03825;Barrio Cópola
+03;Canelones;03826;Costa Azul
+03;Canelones;03827;Costa y Guillamón
+03;Canelones;03828;El Pinar
+03;Canelones;03829;Estación Migues
+03;Canelones;03830;Pinamar - Pinepark
+03;Canelones;03831;Lagomar
+03;Canelones;03832;Olmos
+03;Canelones;03833;Parada Cabrera
+03;Canelones;03834;San Luis
+03;Canelones;03835;Shangrilá
+03;Canelones;03836;Totoral del Sauce
+03;Canelones;03837;Villa Felicidad
+03;Canelones;03838;Villa Paz S.A.
+03;Canelones;03839;Villa San José
+03;Canelones;03840;Estación Tapia
+03;Canelones;03880;Villa San Felipe
+03;Canelones;03881;Villa Hadita
+03;Canelones;03882;Paso de Pache
+03;Canelones;03900;Rural
+03;Canelones;03910;City Golf
+03;Canelones;03911;Viejo Molino San Bernardo
+03;Canelones;03912;Estanque de Pando
+03;Canelones;03913;Jardines de Pando
+03;Canelones;03914;Paso Espinosa
+03;Canelones;03921;Araminda
+03;Canelones;03922;Argentino
+03;Canelones;03925;Bello Horizonte
+03;Canelones;03926;Biarritz
+03;Canelones;03927;Bolívar
+03;Canelones;03928;Campo Militar
+03;Canelones;03929;Capilla de Cella
+03;Canelones;03934;Cruz de los Caminos
+03;Canelones;03935;Cuchilla Alta
+03;Canelones;03939;El Bosque
+03;Canelones;03942;Estación Pedrera
+03;Canelones;03943;Fortín de Santa Rosa
+03;Canelones;03944;Fracc. Progreso
+03;Canelones;03945;Instituto Adventista
+03;Canelones;03946;Jaureguiberry
+03;Canelones;03948;La Lucha
+03;Canelones;03949;La Montañesa
+03;Canelones;03953;Lomas de Solymar
+03;Canelones;03956;Los Titanes
+03;Canelones;03957;Marindia
+03;Canelones;03959;Neptunia
+03;Canelones;03962;Paso de la Cadena
+03;Canelones;03966;Paso Palomeque
+03;Canelones;03968;Piedra del Toro
+03;Canelones;03969;Estación Piedras de Afilar
+03;Canelones;03970;El Galeón
+03;Canelones;03974;Santa Ana
+03;Canelones;03975;Santa Lucía del Este
+03;Canelones;03978;Seis Hermanos
+03;Canelones;03979;Villa Arejo
+03;Canelones;03980;Villa Argentina
+03;Canelones;03984;Villa Porvenir
+03;Canelones;03985;La Tuna
+03;Canelones;03986;Guazú - Virá
+03;Canelones;03987;Colinas de Solymar
+03;Canelones;03988;Barrio Remanso
+03;Canelones;03989;Villa El Tato
+03;Canelones;03990;Villa San Cono
+03;Canelones;03991;Villa Juana
+03;Canelones;03992;Colinas de Carrasco
+03;Canelones;03993;Lomas de Carrasco
+03;Canelones;03994;Carmel
+03;Canelones;03995;La Asunción
+03;Canelones;03996;Quintas del Bosque
+03;Canelones;03997;La Tahona
+03;Canelones;03999;Mirador de la Tahona
+04;Cerro Largo;04020;Melo
+04;Cerro Largo;04521;Fraile Muerto
+04;Cerro Largo;04522;Río Branco
+04;Cerro Largo;04621;Tupambaé
+04;Cerro Largo;04721;Isidoro Noblía
+04;Cerro Largo;04821;Aceguá
+04;Cerro Largo;04822;Bañado de Medina
+04;Cerro Largo;04823;Centurión
+04;Cerro Largo;04824;Cerro de las Cuentas
+04;Cerro Largo;04827;Plácido Rosas
+04;Cerro Largo;04828;Toledo
+04;Cerro Largo;04829;Tres Islas
+04;Cerro Largo;04830;Poblado Uruguay
+04;Cerro Largo;04900;Rural
+04;Cerro Largo;04923;Arbolito
+04;Cerro Largo;04924;Arévalo
+04;Cerro Largo;04930;Caserío Las Cañas
+04;Cerro Largo;04940;Esperanza
+04;Cerro Largo;04943;Getulio Vargas
+04;Cerro Largo;04948;La Pedrera
+04;Cerro Largo;04949;Lago Merín
+04;Cerro Largo;04952;Mangrullo
+04;Cerro Largo;04956;Nando
+04;Cerro Largo;04966;Quebracho
+04;Cerro Largo;04968;Ramón Trigo
+04;Cerro Largo;04981;Soto Goro
+04;Cerro Largo;04983;Barrio López Benítez
+04;Cerro Largo;04985;Casarone
+04;Cerro Largo;04988;Arachania
+04;Cerro Largo;04989;Ñangapiré
+04;Cerro Largo;04990;La Micaela
+05;Colonia;05320;Colonia del Sacramento
+05;Colonia;05321;Carmelo
+05;Colonia;05323;Juan Lacaze
+05;Colonia;05421;Nueva Helvecia
+05;Colonia;05422;Rosario
+05;Colonia;05423;Nueva Palmira
+05;Colonia;05452;Paso Antolín
+05;Colonia;05521;Ombúes de Lavalle
+05;Colonia;05522;Tarariras
+05;Colonia;05621;Colonia Valdense
+05;Colonia;05622;Florencio Sánchez
+05;Colonia;05721;Conchillas
+05;Colonia;05722;Caserío El Cerro
+05;Colonia;05724;La Paz
+05;Colonia;05726;Riachuelo
+05;Colonia;05727;Juan Carlos Caseros
+05;Colonia;05798;Agraciada
+05;Colonia;05821;Boca del Rosario
+05;Colonia;05824;Cufré
+05;Colonia;05826;El Semillero
+05;Colonia;05827;Estación Estanzuela
+05;Colonia;05829;Cerros de San Juan
+05;Colonia;05831;Miguelete
+05;Colonia;05835;Carmelo Golf
+05;Colonia;05836;Montes del Plata
+05;Colonia;05837;La Concordia
+05;Colonia;05838;Cerro de las Armas
+05;Colonia;05839;Campo Chico
+05;Colonia;05900;Rural
+05;Colonia;05923;Campana
+05;Colonia;05924;Artilleros
+05;Colonia;05925;Barker
+05;Colonia;05927;El Ensueño
+05;Colonia;05931;Blanca Arena
+05;Colonia;05932;Brisas del Plata
+05;Colonia;05938;Colonia Cosmopolita
+05;Colonia;05940;Paraje Minuano
+05;Colonia;05951;Los Pinos
+05;Colonia;05955;Chico Torino
+05;Colonia;05956;La Horqueta
+05;Colonia;05959;Playa Azul
+05;Colonia;05960;Playa Britópolis
+05;Colonia;05961;Playa Parant
+05;Colonia;05962;Playa Fomento
+05;Colonia;05964;Puerto Inglés
+05;Colonia;05969;Radial Hernández
+05;Colonia;05977;San Pedro
+05;Colonia;05979;Santa Ana
+05;Colonia;05980;Santa Regina
+05;Colonia;05987;Zagarzazú
+05;Colonia;05989;Arrivillaga
+05;Colonia;05993;El Faro
+05;Colonia;05994;Laguna de los Patos
+05;Colonia;05996;Juan Jackson
+05;Colonia;05997;Pueblo Gil
+05;Colonia;05998;Cerro Carmelo
+05;Colonia;05999;El Quintón
+06;Durazno;06020;Durazno
+06;Durazno;06421;Sarandí del Yi
+06;Durazno;06521;Ciudad del Carmen
+06;Durazno;06621;Blanquillo
+06;Durazno;06622;La Paloma
+06;Durazno;06721;Carlos Reyles
+06;Durazno;06722;Centenario
+06;Durazno;06790;Cerro Chato
+06;Durazno;06821;Baygorria
+06;Durazno;06900;Rural
+06;Durazno;06922;Aguas Buenas
+06;Durazno;06924;Pueblo de Álvarez
+06;Durazno;06935;Cuchilla de Ramírez
+06;Durazno;06940;Feliciano
+06;Durazno;06951;Ombúes de Oribe
+06;Durazno;06960;Rossell y Rius
+06;Durazno;06964;San Jorge
+06;Durazno;06972;Las Palmas
+06;Durazno;06973;Sarandí de Cuadra
+07;Flores;07320;Trinidad
+07;Flores;07721;Ismael Cortinas
+07;Flores;07900;Rural
+07;Flores;07921;Andresito
+07;Flores;07925;Juan José Castro
+07;Flores;07937;La Casilla
+07;Flores;07938;Cerro Colorado
+08;Florida;08220;Florida
+08;Florida;08421;Sarandí Grande
+08;Florida;08521;Casupá
+08;Florida;08621;Cardal
+08;Florida;08622;Fray Marcos
+08;Florida;08623;25 de Agosto
+08;Florida;08624;25 de Mayo
+08;Florida;08721;Alejandro Gallinal
+08;Florida;08722;Capilla del Sauce
+08;Florida;08723;La Cruz
+08;Florida;08724;Nico Pérez
+08;Florida;08790;Cerro Chato
+08;Florida;08821;Chamizo
+08;Florida;08822;Goñi
+08;Florida;08823;Mendoza
+08;Florida;08824;Mendoza Chico
+08;Florida;08825;Reboledo
+08;Florida;08896;Valentines
+08;Florida;08900;Rural
+08;Florida;08923;Berrondo
+08;Florida;08930;Pueblo Ferrer
+08;Florida;08933;Independencia
+08;Florida;08938;Montecoral
+08;Florida;08940;Pintado
+08;Florida;08941;Polanco del Yi
+08;Florida;08944;Puntas de Maciel
+08;Florida;08991;Illescas
+08;Florida;08992;Caserío La Fundación
+08;Florida;08993;La Macana
+08;Florida;08994;Estación Capilla del Sauce
+08;Florida;08995;San Gabriel
+09;Lavalleja;09220;Minas
+09;Lavalleja;09521;José Batlle y Ordóñez
+09;Lavalleja;09522;José Pedro Varela
+09;Lavalleja;09621;Mariscala
+09;Lavalleja;09622;Solís de Mataojo
+09;Lavalleja;09721;Pirarajá
+09;Lavalleja;09722;Zapicán
+09;Lavalleja;09821;Colón
+09;Lavalleja;09823;Aramendía
+09;Lavalleja;09900;Rural
+09;Lavalleja;09924;Blanes Viale
+09;Lavalleja;09928;19 de Junio
+09;Lavalleja;09931;Estación Solís
+09;Lavalleja;09932;Gaetán
+09;Lavalleja;09938;Marco de los Reyes
+09;Lavalleja;09942;Polanco Norte
+09;Lavalleja;09955;Villa del Rosario
+09;Lavalleja;09956;Villa Serrana
+09;Lavalleja;09957;Barrio La Coronilla - Ancap
+09;Lavalleja;09958;San Francisco de las Sierras
+09;Lavalleja;09991;Illescas
+10;Maldonado;10020;Maldonado
+10;Maldonado;10021;Punta del Este
+10;Maldonado;10022;Punta Ballena
+10;Maldonado;10321;San Carlos
+10;Maldonado;10521;Aiguá
+10;Maldonado;10522;Pan de Azúcar
+10;Maldonado;10523;Piriápolis
+10;Maldonado;10822;Garzón
+10;Maldonado;10823;Gerona (Km 110)
+10;Maldonado;10825;Estación Las Flores
+10;Maldonado;10826;Los Talas
+10;Maldonado;10827;Nueva Carrara
+10;Maldonado;10828;Balneario Solís
+10;Maldonado;10829;Pueblo Solís
+10;Maldonado;10831;Chihuahua
+10;Maldonado;10900;Rural
+10;Maldonado;10924;Hipódromo
+10;Maldonado;10926;Bella Vista
+10;Maldonado;10929;Canteras de Marelli
+10;Maldonado;10931;Cerros Azules
+10;Maldonado;10934;El Chorro
+10;Maldonado;10935;El Edén
+10;Maldonado;10936;El Tesoro
+10;Maldonado;10939;Faro José Ignacio
+10;Maldonado;10940;Gregorio Aznárez
+10;Maldonado;10942;La Barra
+10;Maldonado;10944;La Capuera
+10;Maldonado;10945;Las Flores
+10;Maldonado;10947;Manantiales
+10;Maldonado;10948;Ocean Park
+10;Maldonado;10953;Playa Grande
+10;Maldonado;10954;Playa Hermosa
+10;Maldonado;10955;Playa Verde
+10;Maldonado;10958;Punta Colorada
+10;Maldonado;10959;Punta Negra
+10;Maldonado;10962;Ruta 37 y 9- Sierras del Tirol
+10;Maldonado;10969;Sauce de Portezuelo
+10;Maldonado;10972;San Vicente
+10;Maldonado;10973;Balneario Buenos Aires
+10;Maldonado;10981;Los Corchos
+10;Maldonado;10982;Santa Mónica
+10;Maldonado;10983;Edén Rock
+10;Maldonado;10984;Parque Medina
+10;Maldonado;10985;Arenas de José Ignacio
+10;Maldonado;10987;El Quijote
+10;Maldonado;10988;Laguna Blanca
+10;Maldonado;10989;Barrio Frigorífico
+10;Maldonado;10990;Pueblo Mío
+10;Maldonado;10991;Laguna States
+10;Maldonado;10992;La Juanita
+10;Maldonado;10993;Barra de Portezuelo
+10;Maldonado;10994;Chacras del Golf
+10;Maldonado;10995;Fasano Las Piedras- Puerto Quetzal
+10;Maldonado;10996;Chakras del Este
+10;Maldonado;10997;Chacras de Medellín sur Lac
+10;Maldonado;10998;Laguna de los Cisnes- Lomas del Sauce
+11;Paysandú;11120;Paysandú
+11;Paysandú;11521;Guichón
+11;Paysandú;11522;Nuevo Paysandú
+11;Paysandú;11621;Quebracho
+11;Paysandú;11695;Tambores
+11;Paysandú;11721;Lorenzo Geyres
+11;Paysandú;11722;Merinos
+11;Paysandú;11723;Porvenir
+11;Paysandú;11821;Arbolito
+11;Paysandú;11822;Beisso
+11;Paysandú;11823;Casablanca
+11;Paysandú;11824;Cerro Chato
+11;Paysandú;11825;Constancia
+11;Paysandú;11826;Morató
+11;Paysandú;11827;Piedras Coloradas
+11;Paysandú;11828;Piñera
+11;Paysandú;11830;San Félix
+11;Paysandú;11831;Villa María (Tiatucura)
+11;Paysandú;11894;Piedra Sola
+11;Paysandú;11900;Rural
+11;Paysandú;11922;Araujo
+11;Paysandú;11924;Bella Vista
+11;Paysandú;11925;Cañada del Pueblo
+11;Paysandú;11926;Chapicuy
+11;Paysandú;11929;El Eucaliptus
+11;Paysandú;11931;Esperanza
+11;Paysandú;11932;Pueblo Federación
+11;Paysandú;11935;La Tentación
+11;Paysandú;11937;Orgoroso
+11;Paysandú;11945;Cuchilla de Buricayupí
+11;Paysandú;11947;Soto
+11;Paysandú;11950;Zeballos
+11;Paysandú;11951;Chacras de Paysandú
+11;Paysandú;11953;Gallinal
+11;Paysandú;11954;Puntas de Arroyo Negro
+11;Paysandú;11955;Estación Porvenir
+11;Paysandú;11956;Cuchilla de Fuego
+11;Paysandú;11957;Pueblo Alonzo
+11;Paysandú;11958;Queguayar
+11;Paysandú;11959;Termas de Guaviyú
+11;Paysandú;11960;Termas de Almirón
+11;Paysandú;11961;El Espinillo
+12;Río Negro;12320;Fray Bentos
+12;Río Negro;12421;Young
+12;Río Negro;12621;Nuevo Berlín
+12;Río Negro;12622;San Javier
+12;Río Negro;12722;Barrio Anglo
+12;Río Negro;12723;Grecco
+12;Río Negro;12792;Merinos
+12;Río Negro;12797;Algorta
+12;Río Negro;12821;El Ombú
+12;Río Negro;12823;Paso de los Mellizos
+12;Río Negro;12824;Sarandí de Navarro
+12;Río Negro;12825;Sauce  
+12;Río Negro;12826;Villa General Borges
+12;Río Negro;12827;Villa María
+12;Río Negro;12828;Las Cañas
+12;Río Negro;12900;Rural
+12;Río Negro;12923;Bellaco
+12;Río Negro;12930;Los Arrayanes
+12;Río Negro;12932;Menafra
+12;Río Negro;12945;Tres Quintas
+12;Río Negro;12946;Barrio El Molino
+13;Rivera;13020;Rivera
+13;Rivera;13521;Minas de Corrales
+13;Rivera;13522;Tranqueras
+13;Rivera;13621;Vichadero
+13;Rivera;13822;Arroyo Blanco
+13;Rivera;13823;Paso Ataques
+13;Rivera;13824;Cerro Pelado
+13;Rivera;13830;Paso Hospital
+13;Rivera;13831;Lapuente
+13;Rivera;13832;Las Flores
+13;Rivera;13833;Moirones
+13;Rivera;13900;Rural
+13;Rivera;13922;Amarillo
+13;Rivera;13929;Cerrillada
+13;Rivera;13931;Cerros de la Calera
+13;Rivera;13940;Lagos del Norte
+13;Rivera;13943;Masoller
+13;Rivera;13948;Estación Ataques
+13;Rivera;13965;Cerro Chapeau
+13;Rivera;13966;Pueblo Madera-Los Ceibos
+14;Rocha;14320;Rocha
+14;Rocha;14421;Castillos
+14;Rocha;14422;Lascano
+14;Rocha;14521;Chuy
+14;Rocha;14621;Cebollatí
+14;Rocha;14622;Velázquez
+14;Rocha;14721;18 de Julio
+14;Rocha;14723;San Luis al Medio
+14;Rocha;14821;La Aguada y Costa Azul
+14;Rocha;14822;19 de Abril
+14;Rocha;14823;La Coronilla
+14;Rocha;14826;Barrio Pereira
+14;Rocha;14900;Rural
+14;Rocha;14921;Aguas Dulces
+14;Rocha;14923;Barra del Chuy
+14;Rocha;14926;Barrio Torres
+14;Rocha;14928;Cabo Polonio
+14;Rocha;14929;Capacho
+14;Rocha;14935;El Caracol
+14;Rocha;14940;Barra de Valizas
+14;Rocha;14941;La Esmeralda
+14;Rocha;14942;La Pedrera
+14;Rocha;14944;Las Garzas
+14;Rocha;14948;Parallé
+14;Rocha;14953;Puerto de los Botes
+14;Rocha;14957;Puimayen
+14;Rocha;14959;Arachania
+14;Rocha;14960;Pta. Rubia y Sta. Isabel de la Pedrera
+14;Rocha;14962;Punta del Diablo
+14;Rocha;14963;Palmares de la Coronilla
+14;Rocha;14964;La Ribiera
+14;Rocha;14965;Puente Valizas
+14;Rocha;14966;Oceanía del Polonio
+14;Rocha;14967;Pueblo Nuevo
+14;Rocha;14968;Tajamares de la Pedrera
+14;Rocha;14969;San Antonio
+14;Rocha;14970;Rincón de la laguna
+14;Rocha;14971;Santa Ana del Mar
+14;Rocha;14972;Lomas de la Pedrera
+15;Salto;14722;La Paloma
+15;Salto;15120;Salto
+15;Salto;15522;Belén
+15;Salto;15523;Constitución
+15;Salto;15721;Fernández
+15;Salto;15722;San Antonio
+15;Salto;15723;Chacras de Belén
+15;Salto;15821;Albisu
+15;Salto;15822;Biassini
+15;Salto;15823;Campo de Todos
+15;Salto;15824;Cayetano
+15;Salto;15825;Cuchilla de Guaviyú
+15;Salto;15827;Termas del Daymán
+15;Salto;15828;Palomas
+15;Salto;15829;Paso del Parque del Daymán
+15;Salto;15830;Quintana
+15;Salto;15831;Sarandí de Arapey
+15;Salto;15832;Saucedo
+15;Salto;15900;Rural
+15;Salto;15924;Arenitas Blancas
+15;Salto;15931;Celeste
+15;Salto;15935;Cerros de Vera
+15;Salto;15939;Garibaldi
+15;Salto;15943;Termas del Arapey
+15;Salto;15944;Las Flores
+15;Salto;15945;Laureles
+15;Salto;15946;Lluveras
+15;Salto;15949;Migliaro
+15;Salto;15950;Olivera
+15;Salto;15956;Pepe Núñez
+15;Salto;15957;Paso de las Piedras de Arerunguá
+15;Salto;15959;Puntas de Valentín
+15;Salto;15965;Rincón de Valentín
+15;Salto;15966;Colonia 18 de Julio
+15;Salto;15969;Parque José Luis
+15;Salto;15970;Colonia Itapebí
+15;Salto;15971;Guaviyú de Arapey
+15;Salto;15972;Russo
+15;Salto;15973;Paso Cementerio
+15;Salto;15974;Osimani y Llerena
+15;Salto;15975;Barrio Fernández
+15;Salto;15976;Barrio Hípico
+16;San José;16021;Ciudad del Plata
+16;San José;16022;Ecilda Paullier
+16;San José;16220;San José de Mayo
+16;San José;16421;Libertad
+16;San José;16621;Rodríguez
+16;San José;16721;Ituzaingó
+16;San José;16821;Puntas de Valdez
+16;San José;16822;González
+16;San José;16823;Mal Abrigo
+16;San José;16825;18 de Julio (Pueblo Nuevo)
+16;San José;16826;Rafael Peraza
+16;San José;16827;Raigón
+16;San José;16900;Rural
+16;San José;16923;Juan Soler
+16;San José;16924;Boca del Cufré
+16;San José;16925;Capurro
+16;San José;16926;Villa María
+16;San José;16932;Kiyú - Ordeig
+16;San José;16933;La Boyada
+16;San José;16939;Cañada Grande
+16;San José;16941;Laurel
+16;San José;16945;Rincón del Pino
+16;San José;16946;San Gregorio
+16;San José;16960;Cerámicas del Sur
+16;San José;16961;Radial
+16;San José;16962;Cololó Tinosa 
+16;San José;16963;Mangrullo
+16;San José;16964;Carreta Quemada
+16;San José;16965;Costas de Pereira
+16;San José;16966;Colonia Delta
+16;San José;16967;Tropezón
+16;San José;16968;Picada Varela
+16;San José;16970;Puntas de Gregorio
+17;Soriano;17220;Mercedes
+17;Soriano;17321;Dolores
+17;Soriano;17521;Cardona
+17;Soriano;17621;José Enrique Rodó
+17;Soriano;17622;Palmitas
+17;Soriano;17623;Villa Soriano
+17;Soriano;17624;Palmar
+17;Soriano;17721;Egaña
+17;Soriano;17722;Santa Catalina
+17;Soriano;17798;Agraciada
+17;Soriano;17822;Castillos
+17;Soriano;17823;Risso
+17;Soriano;17824;Sacachispas
+17;Soriano;17825;Cañada Nieto
+17;Soriano;17900;Rural
+17;Soriano;17927;Cuchilla del Perdido
+17;Soriano;17928;El Tala
+17;Soriano;17930;La Concordia
+17;Soriano;17931;La Loma
+17;Soriano;17939;Palo Solo
+17;Soriano;17950;Chacras de Dolores
+17;Soriano;17951;Colonia Concordia
+17;Soriano;17952;Perseverano
+17;Soriano;17993;Lares
+17;Soriano;17995;Playa de los Treinta y Tres (Casa Blanca)
+18;Tacuarembó;18020;Tacuarembó
+18;Tacuarembó;18321;Paso de los Toros
+18;Tacuarembó;18521;San Gregorio de Polanco
+18;Tacuarembó;18695;Tambores
+18;Tacuarembó;18721;Achar
+18;Tacuarembó;18722;Ansina
+18;Tacuarembó;18723;Curtina
+18;Tacuarembó;18724;Paso del Cerro
+18;Tacuarembó;18822;Clara
+18;Tacuarembó;18825;Cuchilla del Ombú
+18;Tacuarembó;18827;La Hilera
+18;Tacuarembó;18828;Las Toscas
+18;Tacuarembó;18829;Paso Bonilla
+18;Tacuarembó;18830;Pueblo de Arriba
+18;Tacuarembó;18831;Pueblo del Barro
+18;Tacuarembó;18832;Rincón de la Aldea
+18;Tacuarembó;18833;Rincón del Bonete
+18;Tacuarembó;18834;Balneario Iporá
+18;Tacuarembó;18894;Piedra Sola
+18;Tacuarembó;18900;Rural
+18;Tacuarembó;18925;Cardozo
+18;Tacuarembó;18928;Chamberlain
+18;Tacuarembó;18931;Cuchilla de Peralta
+18;Tacuarembó;18951;Paso de los Novillos
+18;Tacuarembó;18952;Laureles
+18;Tacuarembó;18963;Montevideo Chico
+18;Tacuarembó;18971;Cerro de Pastoreo
+18;Tacuarembó;18980;Sauce de Batoví
+18;Tacuarembó;18990;Puntas de Cinco Sauces
+18;Tacuarembó;18991;Rincón de Pereira
+18;Tacuarembó;18992;Punta de Carretera
+18;Tacuarembó;18993;Cruz de los Caminos
+19;Treinta y Tres;19220;Treinta y Tres
+19;Treinta y Tres;19521;Santa Clara de Olimar
+19;Treinta y Tres;19522;Vergara
+19;Treinta y Tres;19721;Arrozal Treinta y Tres
+19;Treinta y Tres;19722;Gral. Enrique Martínez 
+19;Treinta y Tres;19723;Villa Sara
+19;Treinta y Tres;19790;Cerro Chato
+19;Treinta y Tres;19821;Estación Rincón
+19;Treinta y Tres;19822;Isla Patrulla (María Isabel)
+19;Treinta y Tres;19896;Valentines
+19;Treinta y Tres;19900;Rural
+19;Treinta y Tres;19922;Poblado Alonzo
+19;Treinta y Tres;19924;Arrocera Rincón
+19;Treinta y Tres;19940;Arrocera Los Ceibos
+19;Treinta y Tres;19941;María Albina
+19;Treinta y Tres;19942;Mendizábal (El Oro)
+19;Treinta y Tres;19947;Puntas del Parao
+19;Treinta y Tres;19955;Villa Passano
+19;Treinta y Tres;19956;Ejido de Treinta y Tres
+19;Treinta y Tres;19960;El Bellaco
+19;Treinta y Tres;19961;Arrocera Los Teros
+19;Treinta y Tres;19962;Arrocera Bonomo
+19;Treinta y Tres;19963;Arrocera El Tigre
+19;Treinta y Tres;19964;Arrocera La Catumbera
+19;Treinta y Tres;19965;Arrocera La Querencia
+19;Treinta y Tres;19966;Arrocera Las Palmas
+19;Treinta y Tres;19967;Arrocera Mini
+19;Treinta y Tres;19968;Arrocera Procipa
+19;Treinta y Tres;19969;Arrocera San Fernando
+19;Treinta y Tres;19970;Arrocera Santa Fe
+19;Treinta y Tres;19971;Arrocera Zapata
