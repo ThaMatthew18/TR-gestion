@@ -45,4 +45,4 @@ La aplicación entregada es **Android 8.0+**, con interfaz adaptable a teléfono
 
 ## Verificación
 
-Los comandos están documentados en [README.md](../README.md). La compilación y las 29 pruebas ejecutadas se detallan en [verificacion.md](verificacion.md).
+Los comandos están documentados en [README.md](../README.md). La compilación y las 31 pruebas ejecutadas se detallan en [verificacion.md](verificacion.md). La versión 1.1 agrega temas AMOLED, Claro y Sistema con preferencia local persistente.

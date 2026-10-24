@@ -29,25 +29,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-val Navy = Color(0xFF172E45)
-val Teal = Color(0xFF047F80)
-val Muted = Color(0xFF617185)
-val Canvas = Color(0xFFF4F6F8)
-
-@Composable
-fun GestionTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = lightColorScheme(
-            primary = Teal, onPrimary = Color.White, primaryContainer = Color(0xFFD8F2ED),
-            secondary = Navy, background = Canvas, surface = Color.White,
-            onSurface = Navy, onBackground = Navy, surfaceVariant = Color(0xFFE9EFF3),
-            outline = Color(0xFFB7C4CE), error = Color(0xFFBA353A)
-        ),
-        shapes = Shapes(small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(24.dp)),
-        content = content
-    )
-}
-
 private enum class Module(val label: String, val icon: ImageVector) {
     INICIO("Resumen", Icons.Outlined.Dashboard),
     PERSONAL("Personal", Icons.Outlined.People),
@@ -76,16 +57,16 @@ fun GestionApp(repository: MemoryRepository) {
                 val wide = maxWidth >= 840.dp
                 Row(Modifier.fillMaxSize()) {
                     if (wide) {
-                        Column(Modifier.width(226.dp).fillMaxHeight().background(Navy).padding(20.dp)) {
+                        Column(Modifier.width(226.dp).fillMaxHeight().background(BrandPanel).padding(20.dp)) {
                             Brand(light = true)
                             Spacer(Modifier.height(34.dp))
                             Text("ESPACIO DE TRABAJO", color = Color(0xFF9DB1C2), fontSize = 10.sp, letterSpacing = 1.5.sp)
                             Text(empresa.displayName, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, bottom = 24.dp))
                             Module.entries.forEach { item ->
                                 val selected = item == module
-                                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(if (selected) Color(0xFF284A5C) else Color.Transparent, RoundedCornerShape(12.dp)).clickable { moduleName = item.name }.padding(horizontal = 12.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(item.icon, null, tint = if (selected) Color(0xFF8DE3D5) else Color(0xFFBAC8D4), modifier = Modifier.size(20.dp))
-                                    Text(item.label, color = Color.White, fontSize = 13.sp, modifier = Modifier.padding(start = 12.dp))
+                                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, RoundedCornerShape(12.dp)).clickable { moduleName = item.name }.padding(horizontal = 12.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(item.icon, null, tint = if (selected) MaterialTheme.colorScheme.primary else Color(0xFFBAC8D4), modifier = Modifier.size(20.dp))
+                                    Text(item.label, color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else Color.White, fontSize = 13.sp, modifier = Modifier.padding(start = 12.dp))
                                 }
                             }
                             Spacer(Modifier.weight(1f))
@@ -93,24 +74,25 @@ fun GestionApp(repository: MemoryRepository) {
                         }
                     }
                     Column(Modifier.weight(1f).fillMaxHeight()) {
-                        Row(Modifier.fillMaxWidth().background(Color.White).padding(horizontal = if (wide) 28.dp else 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(horizontal = if (wide) 28.dp else 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(Modifier.weight(1f)) {
                                 Text(if (wide) "ADMINISTRACIÓN / ${module.label.uppercase()}" else "GESTIÓN DE PERSONAL", fontSize = 10.sp, color = Muted, letterSpacing = 1.sp)
                                 Text(empresa.displayName, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                             }
+                            ThemeSelector()
                             OutlinedButton(onClick = switchCompany, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
                                 Icon(Icons.AutoMirrored.Outlined.Logout, null, Modifier.size(16.dp))
                                 Text("Cambiar empresa", fontSize = 12.sp, modifier = Modifier.padding(start = 6.dp))
                             }
                         }
-                        if (!wide) Row(Modifier.fillMaxWidth().background(Color.White).horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (!wide) Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Module.entries.forEach { item ->
                                 FilterChip(selected = item == module, onClick = { moduleName = item.name }, label = { Text(item.label) }, leadingIcon = { Icon(item.icon, null, Modifier.size(17.dp)) })
                             }
                         }
-                        Row(Modifier.fillMaxWidth().background(Color(0xFFFFF4D9)).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.Science, null, Modifier.size(15.dp), tint = Color(0xFF795A16))
-                            Text(" DEMO · Datos ficticios. Los cambios duran durante esta sesión.", color = Color(0xFF795A16), fontSize = 11.sp)
+                        Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.tertiaryContainer).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Science, null, Modifier.size(15.dp), tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                            Text(" DEMO · Datos ficticios. Los cambios duran durante esta sesión.", color = MaterialTheme.colorScheme.onTertiaryContainer, fontSize = 11.sp)
                         }
                         key(empresa, module) {
                             Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -135,8 +117,8 @@ fun GestionApp(repository: MemoryRepository) {
 @Composable
 private fun Brand(light: Boolean = false) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(Modifier.size(36.dp).background(if (light) Color(0xFF285364) else Teal, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Outlined.Badge, null, tint = Color.White, modifier = Modifier.size(22.dp))
+        Box(Modifier.size(36.dp).background(if (light) MaterialTheme.colorScheme.primaryContainer else Teal, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Badge, null, tint = if (light) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
         }
         Column {
             Text("Gestión de", color = if (light) Color.White else Navy, fontSize = 12.sp)
@@ -150,23 +132,28 @@ private fun CompanySelection(onSelect: (Empresa) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
         val wide = maxWidth >= 840.dp
         Row(Modifier.fillMaxSize()) {
-            if (wide) Column(Modifier.fillMaxHeight().weight(.39f).background(Navy).padding(48.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            if (wide) Column(Modifier.fillMaxHeight().weight(.39f).background(BrandPanel).padding(48.dp), verticalArrangement = Arrangement.SpaceBetween) {
                 Brand(light = true)
                 Column {
-                    Box(Modifier.size(64.dp).background(Color(0xFF244A5B), RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Groups, null, tint = Color(0xFF89DED0), modifier = Modifier.size(36.dp)) }
+                    Box(Modifier.size(64.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Groups, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(36.dp)) }
                     Text("Las personas,\nen el centro.", fontSize = 38.sp, lineHeight = 45.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(top = 24.dp))
                     Text("Personal, legajos y seguridad laboral en un solo lugar.", color = Color(0xFFBCD0DC), fontSize = 15.sp, lineHeight = 24.sp, modifier = Modifier.padding(top = 18.dp))
                 }
                 Text("DOS EMPRESAS. UNA MISMA EXPERIENCIA.", color = Color(0xFF9DB8C7), fontSize = 10.sp, letterSpacing = 1.sp)
             }
             Column(Modifier.weight(if (wide) .61f else 1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(horizontal = if (wide) 56.dp else 24.dp, vertical = if (wide) 54.dp else 28.dp)) {
-                if (!wide) { Brand(); Spacer(Modifier.height(40.dp)) }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (!wide) Brand()
+                    Spacer(Modifier.weight(1f))
+                    ThemeSelector()
+                }
+                Spacer(Modifier.height(if (wide) 20.dp else 28.dp))
                 Text("SISTEMA INTEGRAL DE ADMINISTRACIÓN", color = Teal, fontSize = 10.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold)
                 Text("Seleccioná una\nempresa", fontSize = if (wide) 36.sp else 32.sp, lineHeight = 42.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 14.dp))
                 Text("Elegí el espacio de trabajo que querés administrar.", fontSize = 14.sp, lineHeight = 22.sp, color = Muted, modifier = Modifier.padding(top = 12.dp, bottom = 30.dp))
                 Empresa.entries.forEach { company ->
-                    val accent = if (company == Empresa.RR) Teal else Color(0xFF3568AD)
-                    Card(onClick = { onSelect(company) }, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDCE4EA)), shape = RoundedCornerShape(20.dp)) {
+                    val accent = if (company == Empresa.RR) Teal else MaterialTheme.colorScheme.secondary
+                    Card(onClick = { onSelect(company) }, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shape = RoundedCornerShape(20.dp)) {
                         Row(Modifier.padding(22.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(54.dp).background(accent.copy(alpha = .09f), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
                                 Text(if (company == Empresa.RR) "R&R" else "T", fontSize = if (company == Empresa.RR) 16.sp else 24.sp, fontWeight = FontWeight.ExtraBold, color = accent)
@@ -210,22 +197,22 @@ private fun Dashboard(empresa: Empresa, repository: MemoryRepository, onNavigate
             val metrics = listOf(Triple("Personas registradas", data.workers.size.toString(), Icons.Outlined.People), Triple("Documentos", data.workers.sumOf { it.attachments.size }.toString(), Icons.Outlined.FolderOpen), Triple("Entregas de EPP", data.deliveries.count { it.kind == DeliveryKind.EPP }.toString(), Icons.Outlined.HealthAndSafety), Triple("Capacitaciones", data.trainings.size.toString(), Icons.Outlined.School))
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 metrics.chunked(columns).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    row.forEach { metric -> Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                    row.forEach { metric -> Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Column(Modifier.padding(18.dp)) { Icon(metric.third, null, tint = Teal, modifier = Modifier.size(23.dp)); Text(metric.second, fontWeight = FontWeight.Bold, fontSize = 30.sp, modifier = Modifier.padding(top = 12.dp)); Text(metric.first, color = Muted, fontSize = 11.sp) }
                     } }
                 } }
             }
         }
-        if (expired + soon + health > 0) Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF2DC))) {
+        if (expired + soon + health > 0) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
             Column(Modifier.fillMaxWidth().padding(20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.NotificationsActive, null, tint = Color(0xFF9A6715)); Text("Requiere atención", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp)) }
-                Text("$expired capacitaciones vencidas · $soon por vencer\n$health carnés de salud vencidos o próximos a vencer", color = Color(0xFF805F26), fontSize = 13.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.NotificationsActive, null, tint = MaterialTheme.colorScheme.onTertiaryContainer); Text("Requiere atención", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp)) }
+                Text("$expired capacitaciones vencidas · $soon por vencer\n$health carnés de salud vencidos o próximos a vencer", color = MaterialTheme.colorScheme.onTertiaryContainer, fontSize = 13.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 12.dp))
                 TextButton(onClick = { onNavigate(Module.CAPACITACIONES) }) { Text("Ver capacitaciones →") }
             }
         }
         Text("Accesos rápidos", fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
         Module.entries.filter { it != Module.INICIO }.forEach { item ->
-            Card(onClick = { onNavigate(item) }, colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+            Card(onClick = { onNavigate(item) }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(item.icon, null, tint = Teal)
                     Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {

@@ -4,11 +4,15 @@ Aplicación Android en **Kotlin y Jetpack Compose** basada en el pliego suminist
 
 ## Probar en un teléfono
 
-1. Descargá **`GestionPersonal-demo.apk`** desde la [versión de demostración en GitHub](https://github.com/ThaMatthew18/TRANSEO/releases/tag/v1.0.0-demo) o usá el archivo entregado, y copialo a un teléfono con **Android 8.0 o superior**.
+1. Descargá **`GestionPersonal-demo.apk`** desde la [versión AMOLED en GitHub](https://github.com/ThaMatthew18/TRANSEO/releases/tag/v1.1.0-demo) o usá el archivo entregado, y copialo a un teléfono con **Android 8.0 o superior**.
 2. Abrilo desde Archivos y autorizá la instalación desde esa aplicación si Android lo solicita. Es un APK de demostración firmado para depuración.
 3. Iniciá **Gestión de Personal**, elegí **R&R** o **TRANSEO** y recorré el menú. **Cambiar empresa** vuelve a la selección inicial.
 
 No requiere una cuenta ni un servidor para usar la demostración. La carga inicial incluye datos de ejemplo independientes para cada empresa.
+
+## Apariencia AMOLED
+
+La versión 1.1 inicia en **AMOLED**, con fondo negro puro `#000000`, tarjetas oscuras y acentos verdes/azules. El botón de luna/sol en la pantalla inicial y en el encabezado de cada empresa permite elegir **AMOLED**, **Claro** o **Sistema**. La preferencia se guarda en el dispositivo y se conserva al volver a abrir la aplicación; no afecta los registros ni la empresa seleccionada. Formularios, adjuntos, menús, selectores de fecha, alertas y barras del sistema se adaptan al tema. Las exportaciones PDF conservan su diseño claro para impresión.
 
 ## Pantallas disponibles
 
@@ -48,7 +52,7 @@ Desde PowerShell, situado en esta carpeta:
 .\gradlew.bat connectedDebugAndroidTest
 ```
 
-El primer comando genera `app\build\outputs\apk\debug\app-debug.apk`. El último requiere un emulador o teléfono conectado con depuración USB habilitada. También podés ejecutar la app con **Run** en Android Studio. La entrega compiló correctamente y pasó 24 pruebas unitarias y 5 pruebas en Android; los resultados están en [docs/verificacion.md](docs/verificacion.md).
+El primer comando genera `app\build\outputs\apk\debug\app-debug.apk`. El último requiere un emulador o teléfono conectado con depuración USB habilitada. También podés ejecutar la app con **Run** en Android Studio. La entrega compiló correctamente y pasó 24 pruebas unitarias y 7 pruebas en Android; los resultados están en [docs/verificacion.md](docs/verificacion.md).
 
 ## Alcance de la demostración
 
@@ -57,6 +61,6 @@ El primer comando genera `app\build\outputs\apk\debug\app-debug.apk`. El último
 - **Excel real:** archivo `.xlsx` con cuatro hojas —Resumen, Personal, Entregas y Capacitaciones—, encabezados fijos y filtros de columna. Los filtros de obra/proyecto, aportación, indumentaria y estado de capacitación se combinan dentro de la empresa seleccionada. Se exportan datos y nombres de adjuntos; no los archivos originales.
 - **PDF real:** ficha A4 de una página con los seis bloques, referencias a documentos, hasta tres miniaturas de imágenes disponibles y resumen de seguridad. Los valores largos se abrevian; se muestran hasta cinco entregas y cinco capacitaciones, indicando si hay más. El Excel conserva el detalle de los registros exportados. Los PDF adjuntos no se convierten en miniaturas.
 - **Capacitaciones:** “Por vencer” abarca los próximos 30 días; también se distinguen vigentes, vencidas, programadas y sin fecha. Son indicadores dentro de la aplicación, sin notificaciones externas.
-- **Siguiente etapa:** almacenamiento persistente, backend, usuarios/permisos, copias de seguridad y sincronización entre dispositivos quedan pendientes. La recepción conforme es un registro manual con adjunto opcional; no se implementa firma electrónica ni validación automática ante organismos.
+- **Siguiente etapa:** almacenamiento persistente de los registros, backend, usuarios/permisos, copias de seguridad y sincronización entre dispositivos quedan pendientes. La preferencia de tema sí se guarda localmente. La recepción conforme es un registro manual con adjunto opcional; no se implementa firma electrónica ni validación automática ante organismos.
 
 La aplicación incluye sin conexión **671 registros del nomenclátor INE Censo 2023 para los 19 departamentos**, incluidas sus categorías rurales. La fuente y el procedimiento están en [docs/fuentes-geografia.md](docs/fuentes-geografia.md). La correspondencia detallada con el pliego está en [docs/cobertura-requisitos.md](docs/cobertura-requisitos.md).

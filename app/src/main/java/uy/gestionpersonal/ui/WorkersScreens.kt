@@ -43,11 +43,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-private val WorkerNavy = Color(0xFF172E45)
-private val WorkerTeal = Color(0xFF047F80)
-private val WorkerMuted = Color(0xFF667789)
-private val WorkerLine = Color(0xFFE4EAF0)
-
 @Composable
 fun PersonalScreen(empresa: Empresa, repository: MemoryRepository) {
     val workers = repository.data(empresa).workers
@@ -74,7 +69,7 @@ fun PersonalScreen(empresa: Empresa, repository: MemoryRepository) {
             }
         }
         item {
-            Surface(color = Color.White, shape = RoundedCornerShape(18.dp), tonalElevation = 0.dp) {
+            Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(18.dp), tonalElevation = 0.dp) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = search, onValueChange = { search = it }, modifier = Modifier.fillMaxWidth(),
@@ -88,7 +83,7 @@ fun PersonalScreen(empresa: Empresa, repository: MemoryRepository) {
                             FilterChip(selected = status == value, onClick = { status = value }, label = { Text(value) })
                         }
                     }
-                    Text("${visible.size} de ${workers.size} trabajadores", style = MaterialTheme.typography.labelMedium, color = WorkerMuted)
+                    Text("${visible.size} de ${workers.size} trabajadores", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -118,17 +113,17 @@ fun PersonalScreen(empresa: Empresa, repository: MemoryRepository) {
 @Composable
 private fun WorkerCard(worker: Worker, onEdit: () -> Unit, onDelete: () -> Unit, onPdf: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
-    Surface(color = Color.White, shape = RoundedCornerShape(16.dp), border = androidx.compose.foundation.BorderStroke(1.dp, WorkerLine)) {
+    Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 WorkerAvatar(worker)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(worker.displayName, fontWeight = FontWeight.SemiBold, color = WorkerNavy, style = MaterialTheme.typography.titleMedium)
-                    Text(worker.fields["categoria"].orEmpty().ifBlank { "Categoría sin completar" }, color = WorkerMuted, style = MaterialTheme.typography.bodySmall)
+                    Text(worker.displayName, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
+                    Text(worker.fields["categoria"].orEmpty().ifBlank { "Categoría sin completar" }, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
                 Box {
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, "Opciones de ${worker.displayName}", tint = WorkerMuted) }
+                    IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, "Opciones de ${worker.displayName}", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text("Editar ficha") }, leadingIcon = { Icon(Icons.Outlined.Edit, null) }, onClick = { menu = false; onEdit() })
                         DropdownMenuItem(text = { Text("Descargar ficha PDF") }, leadingIcon = { Icon(Icons.Outlined.Download, null) }, onClick = { menu = false; onPdf() })
@@ -136,7 +131,7 @@ private fun WorkerCard(worker: Worker, onEdit: () -> Unit, onDelete: () -> Unit,
                     }
                 }
             }
-            HorizontalDivider(color = WorkerLine)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             BoxWithConstraints {
                 if (maxWidth > 600.dp) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -179,11 +174,11 @@ fun LegajosScreen(empresa: Empresa, repository: MemoryRepository) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { WorkerPageHeading("Legajos digitales", "Documentación y fichas del personal de ${empresa.displayName}.") }
         item {
-            Surface(shape = RoundedCornerShape(18.dp), color = Color.White) {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(Icons.Outlined.FolderOpen, null, tint = WorkerTeal, modifier = Modifier.size(28.dp))
-                        Column { Text("$documentCount documentos", fontWeight = FontWeight.SemiBold, color = WorkerNavy); Text("${workers.size} legajos · ${empresa.displayName}", style = MaterialTheme.typography.bodySmall, color = WorkerMuted) }
+                        Icon(Icons.Outlined.FolderOpen, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                        Column { Text("$documentCount documentos", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface); Text("${workers.size} legajos · ${empresa.displayName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                     OutlinedTextField(value = search, onValueChange = { search = it }, modifier = Modifier.fillMaxWidth(), leadingIcon = { Icon(Icons.Outlined.Search, null) }, placeholder = { Text("Buscar trabajador, cédula o archivo") }, singleLine = true, shape = RoundedCornerShape(12.dp))
                     WorkerSelectDropdown(
@@ -195,33 +190,33 @@ fun LegajosScreen(empresa: Empresa, repository: MemoryRepository) {
         }
         if (visible.isEmpty()) item { WorkersEmptyState("No hay legajos para mostrar", if (workers.isEmpty()) "Creá un trabajador en Personal para iniciar su legajo." else "Cambiá la búsqueda o seleccioná otro trabajador.") }
         items(visible, key = { it.id }) { worker ->
-            Surface(shape = RoundedCornerShape(16.dp), color = Color.White, border = androidx.compose.foundation.BorderStroke(1.dp, WorkerLine)) {
+            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         WorkerAvatar(worker)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(worker.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = WorkerNavy)
-                            Text(worker.fields["cedula"].orEmpty().ifBlank { "Cédula sin completar" }, style = MaterialTheme.typography.bodySmall, color = WorkerMuted)
+                            Text(worker.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                            Text(worker.fields["cedula"].orEmpty().ifBlank { "Cédula sin completar" }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        IconButton(onClick = { exportPdf(worker) }) { Icon(Icons.Outlined.Download, "Descargar ficha de ${worker.displayName} en PDF", tint = WorkerTeal) }
-                        IconButton(onClick = { editor = worker }) { Icon(Icons.Outlined.Edit, "Editar documentos de ${worker.displayName}", tint = WorkerMuted) }
+                        IconButton(onClick = { exportPdf(worker) }) { Icon(Icons.Outlined.Download, "Descargar ficha de ${worker.displayName} en PDF", tint = MaterialTheme.colorScheme.primary) }
+                        IconButton(onClick = { editor = worker }) { Icon(Icons.Outlined.Edit, "Editar documentos de ${worker.displayName}", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
-                    HorizontalDivider(color = WorkerLine)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     if (worker.attachments.isEmpty()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Este legajo todavía no tiene archivos.", modifier = Modifier.weight(1f), color = WorkerMuted, style = MaterialTheme.typography.bodySmall)
+                            Text("Este legajo todavía no tiene archivos.", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                             TextButton(onClick = { editor = worker }) { Text("Adjuntar") }
                         }
                     }
                     worker.attachments.forEach { file ->
                         val realFile = file.uri.startsWith("content://")
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF1F6F7)) { Icon(Icons.Outlined.Description, null, Modifier.padding(10.dp), tint = WorkerTeal) }
+                            Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) { Icon(Icons.Outlined.Description, null, Modifier.padding(10.dp), tint = MaterialTheme.colorScheme.primary) }
                             Column(Modifier.weight(1f)) {
-                                Text(attachmentTitle(file.kind), style = MaterialTheme.typography.labelLarge, color = WorkerNavy)
-                                Text(file.name, style = MaterialTheme.typography.bodySmall, color = WorkerMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                if (!realFile) Text("Ejemplo · sin archivo vinculado", color = Color(0xFF9C641A), style = MaterialTheme.typography.labelSmall)
+                                Text(attachmentTitle(file.kind), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                                Text(file.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                if (!realFile) Text("Ejemplo · sin archivo vinculado", color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.labelSmall)
                             }
                             IconButton(onClick = { openWorkerAttachment(context, file) }, enabled = realFile) { Icon(Icons.Outlined.OpenInNew, "Abrir ${file.name}") }
                         }
@@ -263,19 +258,19 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
     val localities = remember(context, department) { UruguayGeography.localities(context, department) }
 
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
-        Surface(Modifier.widthIn(max = 1080.dp).fillMaxWidth(0.96f).fillMaxHeight(0.94f), shape = RoundedCornerShape(22.dp), color = Color.White) {
+        Surface(Modifier.widthIn(max = 1080.dp).fillMaxWidth(0.96f).fillMaxHeight(0.94f), shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface) {
             Column {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(if (worker.fields.isEmpty() && worker.attachments.isEmpty()) "Ficha de trabajador" else worker.displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = WorkerNavy)
-                        Text("${worker.empresa.displayName} · Todos los campos son opcionales", style = MaterialTheme.typography.bodySmall, color = WorkerMuted)
+                        Text(if (worker.fields.isEmpty() && worker.attachments.isEmpty()) "Ficha de trabajador" else worker.displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("${worker.empresa.displayName} · Todos los campos son opcionales", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(onClick = dismiss) { Icon(Icons.Outlined.Close, "Cerrar ficha") }
                 }
-                HorizontalDivider(color = WorkerLine)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     WorkerFormSection("01", "Datos personales e identificación", "Identidad y documentación del trabajador") {
-                        Text("Código interno: ${worker.id}", color = WorkerMuted, style = MaterialTheme.typography.labelSmall)
+                        Text("Código interno: ${worker.id}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
                         WorkerFieldGrid(listOf(
                             WorkerFieldSpec("nombres", "Nombres"), WorkerFieldSpec("apellidos", "Apellidos"),
                             WorkerFieldSpec("cedula", "Cédula de identidad"), WorkerFieldSpec("nacimiento", "Fecha de nacimiento", date = true),
@@ -313,7 +308,7 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
                     }
                     Spacer(Modifier.height(4.dp))
                 }
-                HorizontalDivider(color = WorkerLine)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = dismiss) { Text("Cancelar") }
                     Spacer(Modifier.width(10.dp))
@@ -334,8 +329,8 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
 private fun WorkerFormSection(number: String, title: String, subtitle: String, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Surface(color = Color(0xFFE7F3F2), shape = RoundedCornerShape(10.dp)) { Text(number, Modifier.padding(10.dp), color = WorkerTeal, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge) }
-            Column { Text(title, fontWeight = FontWeight.SemiBold, color = WorkerNavy, style = MaterialTheme.typography.titleMedium); Text(subtitle, color = WorkerMuted, style = MaterialTheme.typography.bodySmall) }
+            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(10.dp)) { Text(number, Modifier.padding(10.dp), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge) }
+            Column { Text(title, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium); Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
         }
         content()
     }
@@ -384,7 +379,7 @@ private fun WorkerSelectDropdown(value: String, label: String, options: List<Pai
             placeholder = { Text(if (!enabled) "Primero elegí un departamento" else "Sin completar") }
         )
         ExposedDropdownMenu(expanded = expanded && enabled, onDismissRequest = { expanded = false }) {
-            if (allowClear) DropdownMenuItem(text = { Text("Sin completar", color = WorkerMuted) }, onClick = { onSelect(""); expanded = false })
+            if (allowClear) DropdownMenuItem(text = { Text("Sin completar", color = MaterialTheme.colorScheme.onSurfaceVariant) }, onClick = { onSelect(""); expanded = false })
             options.forEach { (key, text) -> DropdownMenuItem(text = { Text(text) }, onClick = { onSelect(key); expanded = false }) }
         }
     }
@@ -411,17 +406,17 @@ private fun WorkerAttachmentGrid(attachments: List<Attachment>, onChoose: (Strin
     val context = LocalContext.current
     val kinds = listOf("cedula_frente", "cedula_dorso", "carne_frente", "carne_dorso")
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("DOCUMENTOS ADJUNTOS", color = WorkerMuted, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+        Text("DOCUMENTOS ADJUNTOS", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
         kinds.forEach { kind ->
             val file = attachments.firstOrNull { it.kind == kind }
-            Surface(color = Color(0xFFF6F8FA), shape = RoundedCornerShape(12.dp), border = androidx.compose.foundation.BorderStroke(1.dp, WorkerLine)) {
+            Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(if (file == null) Icons.Outlined.UploadFile else Icons.Outlined.Description, null, tint = WorkerTeal)
+                        Icon(if (file == null) Icons.Outlined.UploadFile else Icons.Outlined.Description, null, tint = MaterialTheme.colorScheme.primary)
                         Column(Modifier.weight(1f)) {
-                            Text(attachmentTitle(kind), style = MaterialTheme.typography.labelLarge, color = WorkerNavy)
-                            Text(file?.name ?: "Imagen o PDF · opcional", color = WorkerMuted, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            if (file != null && !file.uri.startsWith("content://")) Text("Ejemplo · sin archivo vinculado", style = MaterialTheme.typography.labelSmall, color = Color(0xFF9C641A))
+                            Text(attachmentTitle(kind), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                            Text(file?.name ?: "Imagen o PDF · opcional", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            if (file != null && !file.uri.startsWith("content://")) Text("Ejemplo · sin archivo vinculado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                         }
                         if (file != null && file.uri.startsWith("content://")) IconButton(onClick = { openWorkerAttachment(context, file) }) { Icon(Icons.Outlined.OpenInNew, "Abrir ${file.name}", Modifier.size(18.dp)) }
                         if (file != null) IconButton(onClick = { onRemove(kind) }, modifier = Modifier.size(36.dp)) { Icon(Icons.Outlined.Close, "Quitar ${attachmentTitle(kind)}", Modifier.size(18.dp)) }
@@ -482,11 +477,11 @@ private fun WorkerPageHeading(title: String, description: String, action: String
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val compact = maxWidth < 600.dp
         if (compact) Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = WorkerNavy)
-            Text(description, color = WorkerMuted, style = MaterialTheme.typography.bodyMedium)
+            Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             if (action != null) Button(onClick = onAction, shape = RoundedCornerShape(10.dp)) { Icon(Icons.Outlined.PersonAdd, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(action) }
         } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = WorkerNavy); Spacer(Modifier.height(5.dp)); Text(description, color = WorkerMuted) }
+            Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface); Spacer(Modifier.height(5.dp)); Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             if (action != null) Button(onClick = onAction, shape = RoundedCornerShape(10.dp), contentPadding = PaddingValues(horizontal = 18.dp, vertical = 13.dp)) { Icon(Icons.Outlined.PersonAdd, null, Modifier.size(19.dp)); Spacer(Modifier.width(8.dp)); Text(action) }
         }
     }
@@ -495,31 +490,31 @@ private fun WorkerPageHeading(title: String, description: String, action: String
 @Composable
 private fun WorkerAvatar(worker: Worker) {
     val initials = listOf(worker.fields["nombres"].orEmpty().trim().firstOrNull(), worker.fields["apellidos"].orEmpty().trim().firstOrNull()).filterNotNull().joinToString("").uppercase().ifBlank { "—" }
-    Box(Modifier.size(46.dp).background(Color(0xFFE9F2F4), CircleShape), contentAlignment = Alignment.Center) { Text(initials, fontWeight = FontWeight.Bold, color = WorkerTeal, style = MaterialTheme.typography.titleMedium) }
+    Box(Modifier.size(46.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape), contentAlignment = Alignment.Center) { Text(initials, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium) }
 }
 
 @Composable
 private fun WorkerDetail(label: String, value: String?, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) { Text(label, style = MaterialTheme.typography.labelSmall, color = WorkerMuted); Text(value.orEmpty().ifBlank { "Sin completar" }, style = MaterialTheme.typography.bodyMedium, color = WorkerNavy, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) { Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(value.orEmpty().ifBlank { "Sin completar" }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis) }
 }
 
 @Composable
 private fun WorkerStatusChip(active: Boolean) {
-    Surface(color = if (active) Color(0xFFE7F4ED) else Color(0xFFF1F3F5), shape = RoundedCornerShape(7.dp)) {
+    Surface(color = if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(7.dp)) {
         Row(Modifier.padding(horizontal = 9.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Box(Modifier.size(6.dp).background(if (active) Color(0xFF228358) else WorkerMuted, CircleShape))
-            Text(if (active) "Activo" else "Con baja", color = if (active) Color(0xFF247A53) else WorkerMuted, style = MaterialTheme.typography.labelSmall)
+            Box(Modifier.size(6.dp).background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
+            Text(if (active) "Activo" else "Con baja", color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
         }
     }
 }
 
 @Composable
 private fun WorkersEmptyState(title: String, description: String) {
-    Surface(Modifier.fillMaxWidth(), color = Color.White, shape = RoundedCornerShape(18.dp)) {
+    Surface(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(18.dp)) {
         Column(Modifier.padding(horizontal = 24.dp, vertical = 46.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Outlined.FolderOpen, null, tint = WorkerTeal, modifier = Modifier.size(42.dp))
-            Text(title, style = MaterialTheme.typography.titleMedium, color = WorkerNavy, fontWeight = FontWeight.SemiBold)
-            Text(description, style = MaterialTheme.typography.bodyMedium, color = WorkerMuted)
+            Icon(Icons.Outlined.FolderOpen, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(42.dp))
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

@@ -252,6 +252,6 @@ fun statusLabel(status: TrainingStatus): String = when (status) { TrainingStatus
 
 @Composable
 fun TrainingBadge(status: TrainingStatus) {
-    val color = when (status) { TrainingStatus.VIGENTE -> Teal; TrainingStatus.POR_VENCER -> androidx.compose.ui.graphics.Color(0xFF9B6500); TrainingStatus.VENCIDA -> MaterialTheme.colorScheme.error; TrainingStatus.SIN_FECHA -> Muted; TrainingStatus.PROGRAMADA -> androidx.compose.ui.graphics.Color(0xFF3568AD) }
+    val color = when (status) { TrainingStatus.VIGENTE -> Teal; TrainingStatus.POR_VENCER -> MaterialTheme.colorScheme.tertiary; TrainingStatus.VENCIDA -> MaterialTheme.colorScheme.error; TrainingStatus.SIN_FECHA -> Muted; TrainingStatus.PROGRAMADA -> MaterialTheme.colorScheme.secondary }
     Surface(color = color.copy(alpha = .09f), shape = MaterialTheme.shapes.small) { Text("● ${statusLabel(status)}", color = color, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) }
 }
