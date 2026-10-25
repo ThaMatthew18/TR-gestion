@@ -1,22 +1,19 @@
-# Verificación de la entrega
+# Verificación de la integración de Drive
 
-Comprobaciones ejecutadas el 23 de octubre de 2026 (America/Montevideo).
+Versión compilada: **1.2-drive**, código de versión 3, Android 8.0+.
 
-- Compilación `:app:assembleDebug`: correcta. APK debug instalable en Android 8.0 o superior.
-- `:app:testDebugUnitTest`: **24 pruebas aprobadas**, 0 fallas. Cubren guardado incompleto, CRUD, adjuntos, separación empresarial, referencias cruzadas, cascada, ID y cálculo de vencimientos.
-- `:app:connectedDebugAndroidTest`: **7 pruebas aprobadas**, 0 fallas, en emulador Android 17 / API 37. Tres pruebas de interfaz verifican selección y cambio de empresa, navegación, búsqueda, personas visibles y alta con todos los campos vacíos. Dos verifican geografía y exportaciones reales. Otras dos comprueban el fondo negro AMOLED real, alternancia con Claro/Sistema, conservación de empresa y personas, guardado de preferencia y recreación de la actividad.
-- Geografía: 19 departamentos y 671 registros oficiales, consulta en cascada sin conexión.
-- Excel: archivos generados con el código Kotlin y abiertos con openpyxl; cuatro hojas, encabezados, filtros, acentos y valores de texto conservados. Exportaciones separadas aun ante una fuente de prueba mezclada.
-- PDF: Android genera una página A4 en fichas completas y vacías. Renderizadas con Poppler y revisadas visualmente: bloques legibles, miniaturas, resumen de seguridad, avisos de truncado y pie de página sin superposición.
-- Inicio y panel de empresa revisados en el emulador. Esta verificación no equivale a una certificación de compatibilidad con todos los modelos Android.
-- Instalación y arranque correctos en Samsung Galaxy A55 (SM-A556E), conectado por USB y autorizado. La suite instrumentada se ejecutó en el emulador; en el teléfono se comprobó instalación y apertura.
+## Pruebas ejecutadas
 
-Para repetir las pruebas con PowerShell y un dispositivo de prueba conectado:
+- `:app:assembleDebug`: compilación correcta.
+- `:app:testDebugUnitTest`: **35 pruebas aprobadas**, 0 fallas. Incluyen las comprobaciones previas del dominio, restauración de snapshots y errores de almacenamiento, más 9 pruebas de planificación y sincronización de Drive.
+- `:app:connectedDebugAndroidTest`: **11 pruebas aprobadas**, 0 fallas, en emulador Android 17/API 37. Incluyen aislamiento empresarial, campos opcionales, exportaciones, INE, temas y preferencia, restauración de registros, copia durable de documentos, transporte PATCH de Android y bloqueo de acciones de Drive sin autorización.
+- Las pruebas del motor de Drive usan un adaptador simulado. Verifican actualización del mismo ID, detección de cambios, selección empresarial, cambio de cuenta sin reutilizar IDs previos, exclusión de adjuntos de ejemplo sin archivo y propagación de fallas sin informar éxito falso.
+- Las pruebas de almacenamiento verifican que los registros se reconstruyan y que una copia de documento continúe legible después de quitar su archivo de origen.
 
-```powershell
-.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:connectedDebugAndroidTest
-```
+## Límite de validación
 
-Las pruebas usan Espresso 3.7.0 para la compatibilidad de la herramienta de pruebas con Android 17. Los archivos de prueba y los datos usados son ficticios. La aplicación conserva los registros en memoria durante la sesión, sin almacenamiento persistente ni backend.
+**No se probó autorización, carga ni reemplazo contra una cuenta real de Google Drive.** Falta crear/configurar el proyecto OAuth de Google Cloud y registrar paquete/certificado. No se utilizó una cuenta de Drive conectada al chat ni se cargaron documentos reales.
 
-Versión verificada: **1.1-demo (AMOLED)**. Solo la preferencia de tema se guarda de forma persistente; el alcance de los registros de demostración sigue siendo de sesión.
+La automatización del navegador se detuvo al no poder verificar la URL actual de la ventana disponible. El registro de Cloud no se completó. La guía [google-drive.md](google-drive.md) deja los pasos, el paquete, la huella SHA-1 y la prueba real que debe ejecutarse después.
+
+Esta versión se entrega como integración en revisión, con APK de prueba. La versión AMOLED 1.1 publicada sigue disponible y no se sustituye hasta completar la activación y prueba real de Drive.

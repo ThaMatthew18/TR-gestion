@@ -27,6 +27,10 @@ import uy.gestionpersonal.data.*
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun DeliveriesScreen(empresa: Empresa, repository: MemoryRepository, kind: DeliveryKind) {
@@ -91,16 +95,21 @@ private fun DeliveryForm(empresa: Empresa, kind: DeliveryKind, workers: List<Wor
     var receiptName by remember { mutableStateOf(existing?.receiptName.orEmpty()) }
     var receiptUri by remember { mutableStateOf(existing?.receiptUri.orEmpty()) }
     var fileError by remember { mutableStateOf("") }
+    var importing by remember { mutableStateOf(false) }
+    val importScope = rememberCoroutineScope()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            runCatching {
-                runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-                receiptName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null } ?: "Constancia adjunta"
-                receiptUri = uri.toString(); fileError = ""
-            }.onFailure { fileError = "No se pudo leer el documento. Probá con otro archivo." }
+            importScope.launch {
+                importing = true
+                try {
+                    val document = withContext(Dispatchers.IO) { importDocument(context, uri) }
+                    receiptName = document.name; receiptUri = document.uri; fileError = ""
+                } catch (failure: Exception) { if (failure is CancellationException) throw failure; fileError = "No se pudo guardar el documento. Revisá el archivo y el espacio disponible." }
+                finally { importing = false }
+            }
         }
     }
-    SafetyFormDialog(if (existing == null) "Registrar entrega" else "Editar entrega", onDismiss, onSave = {
+    SafetyFormDialog(if (existing == null) "Registrar entrega" else "Editar entrega", onDismiss, canSave = !importing, onSave = {
         onSave(Delivery(id = existing?.id ?: newId(), empresa = empresa, workerId = worker, kind = kind, item = item, size = size, date = date, quantity = quantity, conformity = conformity, notes = notes, receiptName = receiptName, receiptUri = receiptUri))
     }) {
         Text("${empresa.displayName} · ${if (kind == DeliveryKind.EPP) "EPP" else "Uniformes"}", color = Teal, fontWeight = FontWeight.SemiBold)
@@ -114,7 +123,8 @@ private fun DeliveryForm(empresa: Empresa, kind: DeliveryKind, workers: List<Wor
         AppDateField("Fecha de entrega", date) { date = it }
         Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(conformity, { conformity = it }); Text("Recepción en conformidad", fontSize = 14.sp) }
         Text("Marcá esta opción cuando cuentes con la conformidad del trabajador. Podés adjuntar la constancia firmada.", color = Muted, fontSize = 12.sp)
-        OutlinedButton(onClick = { picker.launch(arrayOf("application/pdf", "image/*")) }) { Icon(Icons.Outlined.AttachFile, null, Modifier.size(18.dp)); Text(if (receiptName.isBlank()) "Adjuntar constancia" else "Reemplazar constancia", Modifier.padding(start = 6.dp)) }
+        OutlinedButton(onClick = { picker.launch(arrayOf("application/pdf", "image/*")) }, enabled = !importing) { Icon(Icons.Outlined.AttachFile, null, Modifier.size(18.dp)); Text(if (receiptName.isBlank()) "Adjuntar constancia" else "Reemplazar constancia", Modifier.padding(start = 6.dp)) }
+        if (importing) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (receiptName.isNotBlank()) { Text(receiptName, color = Teal, fontSize = 12.sp); TextButton(onClick = { receiptName = ""; receiptUri = "" }) { Text("Quitar adjunto") } }
         if (fileError.isNotBlank()) Text(fileError, color = MaterialTheme.colorScheme.error)
         OutlinedTextField(notes, { notes = it }, label = { Text("Observaciones") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
@@ -225,14 +235,14 @@ fun AppDateField(label: String, value: String, onChange: (String) -> Unit) {
 }
 
 @Composable
-private fun SafetyFormDialog(title: String, onDismiss: () -> Unit, onSave: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+private fun SafetyFormDialog(title: String, onDismiss: () -> Unit, onSave: () -> Unit, canSave: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.widthIn(max = 620.dp).fillMaxWidth(.96f).fillMaxHeight(.93f), shape = MaterialTheme.shapes.large) {
             Column(Modifier.padding(20.dp).imePadding()) {
                 Row(verticalAlignment = Alignment.CenterVertically) { Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)); IconButton(onClick = onDismiss) { Icon(Icons.Outlined.Close, "Cerrar") } }
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
                 HorizontalDivider(Modifier.padding(vertical = 12.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { TextButton(onClick = onDismiss) { Text("Cancelar") }; Button(onClick = onSave) { Text("Guardar") } }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { TextButton(onClick = onDismiss) { Text("Cancelar") }; Button(onClick = onSave, enabled = canSave) { Text("Guardar") } }
             }
         }
     }

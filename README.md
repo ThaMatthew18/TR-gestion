@@ -2,9 +2,11 @@
 
 Aplicación Android en **Kotlin y Jetpack Compose** basada en el pliego suministrado. Las dos empresas tienen las mismas pantallas y mantienen separados sus trabajadores, legajos, uniformes, EPP, capacitaciones y reportes.
 
+> **Google Drive: registro OAuth pendiente.** El código de conexión y actualización está implementado, pero necesita registrar la app en Google Cloud para autorizar cuentas reales. No se usó ninguna cuenta real de Drive durante las pruebas. [Guía de activación](docs/google-drive.md).
+
 ## Probar en un teléfono
 
-1. Descargá **`GestionPersonal-demo.apk`** desde la [versión AMOLED en GitHub](https://github.com/ThaMatthew18/TRANSEO/releases/tag/v1.1.0-demo) o usá el archivo entregado, y copialo a un teléfono con **Android 8.0 o superior**.
+1. Usá el APK de prueba `GestionPersonal-Drive-preview.apk`, entregado junto al código, en un teléfono con **Android 8.0 o superior**. La conexión real con Google necesita completar primero la [configuración de Cloud](docs/google-drive.md).
 2. Abrilo desde Archivos y autorizá la instalación desde esa aplicación si Android lo solicita. Es un APK de demostración firmado para depuración.
 3. Iniciá **Gestión de Personal**, elegí **R&R** o **TRANSEO** y recorré el menú. **Cambiar empresa** vuelve a la selección inicial.
 
@@ -12,11 +14,11 @@ No requiere una cuenta ni un servidor para usar la demostración. La carga inici
 
 ## Apariencia AMOLED
 
-La versión 1.1 inicia en **AMOLED**, con fondo negro puro `#000000`, tarjetas oscuras y acentos verdes/azules. El botón de luna/sol en la pantalla inicial y en el encabezado de cada empresa permite elegir **AMOLED**, **Claro** o **Sistema**. La preferencia se guarda en el dispositivo y se conserva al volver a abrir la aplicación; no afecta los registros ni la empresa seleccionada. Formularios, adjuntos, menús, selectores de fecha, alertas y barras del sistema se adaptan al tema. Las exportaciones PDF conservan su diseño claro para impresión.
+La aplicación inicia en **AMOLED**, con fondo negro puro `#000000`, tarjetas oscuras y acentos verdes/azules. El botón de luna/sol en la pantalla inicial y en el encabezado de cada empresa permite elegir **AMOLED**, **Claro** o **Sistema**. La preferencia se guarda en el dispositivo y se conserva al volver a abrir la aplicación; no afecta los registros ni la empresa seleccionada. Formularios, adjuntos, menús, selectores de fecha, alertas y barras del sistema se adaptan al tema. Las exportaciones PDF conservan su diseño claro para impresión.
 
 ## Pantallas disponibles
 
-Además del **Resumen**, el menú ofrece seis módulos:
+Además del **Resumen**, el menú ofrece siete módulos:
 
 | Módulo | Funciones |
 | --- | --- |
@@ -26,6 +28,7 @@ Además del **Resumen**, el menú ofrece seis módulos:
 | EPP | Entregas de equipos, recepción en conformidad y constancia adjunta opcional. |
 | Capacitaciones | Títulos habituales o personalizados, fecha, vigencia y alertas por estado. |
 | Reportes | Excel consolidado filtrado y PDF individual. |
+| Google Drive | Selección de cuenta en el dispositivo y actualización de adjuntos por empresa. |
 
 **Todos los campos de carga son opcionales.** Se puede guardar una ficha, entrega o capacitación incompleta y completarla después. Los identificadores internos y la empresa se asignan automáticamente.
 
@@ -52,15 +55,16 @@ Desde PowerShell, situado en esta carpeta:
 .\gradlew.bat connectedDebugAndroidTest
 ```
 
-El primer comando genera `app\build\outputs\apk\debug\app-debug.apk`. El último requiere un emulador o teléfono conectado con depuración USB habilitada. También podés ejecutar la app con **Run** en Android Studio. La entrega compiló correctamente y pasó 24 pruebas unitarias y 7 pruebas en Android; los resultados están en [docs/verificacion.md](docs/verificacion.md).
+El primer comando genera `app\build\outputs\apk\debug\app-debug.apk`. El último requiere un emulador o teléfono conectado con depuración USB habilitada. También podés ejecutar la app con **Run** en Android Studio. Los resultados y los límites de validación están en [docs/verificacion.md](docs/verificacion.md).
 
-## Alcance de la demostración
+## Guardado local y Google Drive
 
-- **Memoria de sesión:** el repositorio vive en un `ViewModel`. Los registros se conservan al rotar el dispositivo y al cambiar de empresa. Se pierden si Android termina el proceso o al comenzar un proceso nuevo; se vuelven a cargar los ejemplos. Los borradores de formularios abiertos no se conservan al recrear la pantalla.
-- **Adjuntos:** se seleccionan archivos originales del dispositivo o de un proveedor de documentos. La aplicación guarda su referencia URI en la sesión; los originales permanecen en su ubicación. Un permiso revocado o un archivo movido puede impedir abrirlo. No se realiza una carga a un servidor.
-- **Excel real:** archivo `.xlsx` con cuatro hojas —Resumen, Personal, Entregas y Capacitaciones—, encabezados fijos y filtros de columna. Los filtros de obra/proyecto, aportación, indumentaria y estado de capacitación se combinan dentro de la empresa seleccionada. Se exportan datos y nombres de adjuntos; no los archivos originales.
-- **PDF real:** ficha A4 de una página con los seis bloques, referencias a documentos, hasta tres miniaturas de imágenes disponibles y resumen de seguridad. Los valores largos se abrevian; se muestran hasta cinco entregas y cinco capacitaciones, indicando si hay más. El Excel conserva el detalle de los registros exportados. Los PDF adjuntos no se convierten en miniaturas.
-- **Capacitaciones:** “Por vencer” abarca los próximos 30 días; también se distinguen vigentes, vencidas, programadas y sin fecha. Son indicadores dentro de la aplicación, sin notificaciones externas.
-- **Siguiente etapa:** almacenamiento persistente de los registros, backend, usuarios/permisos, copias de seguridad y sincronización entre dispositivos quedan pendientes. La preferencia de tema sí se guarda localmente. La recepción conforme es un registro manual con adjunto opcional; no se implementa firma electrónica ni validación automática ante organismos.
+- **Registros persistentes:** se conservan al cerrar el proceso y se restauran al abrir. Se usa almacenamiento privado con escritura atómica. Los borradores de formularios abiertos no sobreviven a una recreación de pantalla.
+- **Adjuntos:** las imágenes/PDF seleccionados se copian al almacenamiento privado. La lectura y copia se ejecutan fuera del hilo de interfaz. Mover el original o revocar el permiso de su proveedor no afecta a la copia. Desinstalar la app o borrar sus datos elimina el almacenamiento local.
+- **Cuenta elegida dentro de la app:** cada usuario toca Conectar Google Drive, elige una cuenta del dispositivo y autoriza `drive.file`. El proyecto Cloud identifica al desarrollador; no fija la cuenta de destino. El código no contiene una cuenta de servicio ni una cuenta de Drive predefinida.
+- **Sincronización de adjuntos:** identificación/salud y constancias de entrega, en Gestión de Personal / Empresa / Trabajador. Reemplazar un adjunto actualiza el mismo archivo remoto. SHA-256 identifica cambios. Conectar una cuenta no sube archivos por sí solo. Actualizar al guardar se activa por empresa con la app abierta; ante errores se conservan los archivos y se puede reintentar. No se implementa carga con la app cerrada.
+- **Cambio de cuenta:** desactiva las actualizaciones automáticas y requiere una nueva autorización y acción del usuario. Quitar un registro local o desconectar no elimina archivos de Drive. La sincronización va de la app a Drive; no descarga cambios externos ni restaura legajos completos.
+- **Excel y PDF:** se conservan las exportaciones locales. Excel tiene cuatro hojas, filtros y los seis bloques; el PDF es un resumen A4 de una página con hasta tres miniaturas y avisos de información adicional. Estos reportes no se suben automáticamente.
+- **Pendiente:** registro OAuth de Google Cloud y prueba de autorización/carga real. Backend de usuarios, roles, auditoría y combinación de cambios entre dispositivos no están implementados. [Activación y prueba real](docs/google-drive.md).
 
 La aplicación incluye sin conexión **671 registros del nomenclátor INE Censo 2023 para los 19 departamentos**, incluidas sus categorías rurales. La fuente y el procedimiento están en [docs/fuentes-geografia.md](docs/fuentes-geografia.md). La correspondencia detallada con el pliego está en [docs/cobertura-requisitos.md](docs/cobertura-requisitos.md).

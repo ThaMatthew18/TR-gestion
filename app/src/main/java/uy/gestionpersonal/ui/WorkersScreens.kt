@@ -38,10 +38,15 @@ import uy.gestionpersonal.data.MemoryRepository
 import uy.gestionpersonal.data.UruguayGeography
 import uy.gestionpersonal.data.Worker
 import uy.gestionpersonal.data.newId
+import uy.gestionpersonal.data.importDocument
 import uy.gestionpersonal.reports.exportWorkerPdf
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun PersonalScreen(empresa: Empresa, repository: MemoryRepository) {
@@ -239,19 +244,23 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
     val fields = remember(worker.id) { mutableStateMapOf<String, String>().apply { putAll(worker.fields) } }
     val attachments = remember(worker.id) { mutableStateListOf<Attachment>().apply { addAll(worker.attachments) } }
     var pendingKind by remember { mutableStateOf("") }
+    var importing by remember { mutableStateOf(false) }
+    val importScope = rememberCoroutineScope()
     var discardConfirmation by remember { mutableStateOf(false) }
     val changed = fields.toMap().filterValues { it.isNotBlank() } != worker.fields.filterValues { it.isNotBlank() } || attachments.toList() != worker.attachments
     val dismiss = { if (changed) discardConfirmation = true else onDismiss() }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null && pendingKind.isNotBlank()) {
-            runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-            val name = runCatching {
-                context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)) else null
-                }
-            }.getOrNull() ?: uri.lastPathSegment ?: "Documento"
-            attachments.removeAll { it.kind == pendingKind }
-            attachments.add(Attachment(id = newId(), kind = pendingKind, name = name, uri = uri.toString()))
+            val kind = pendingKind
+            importScope.launch {
+                importing = true
+                try {
+                    val document = withContext(Dispatchers.IO) { importDocument(context, uri) }
+                    attachments.removeAll { it.kind == kind }
+                    attachments.add(Attachment(id = newId(), kind = kind, name = document.name, uri = document.uri))
+                } catch (failure: Exception) { if (failure is CancellationException) throw failure; Toast.makeText(context, "No se pudo guardar el documento. Verificá el archivo y el espacio disponible.", Toast.LENGTH_LONG).show() }
+                finally { importing = false }
+            }
         }
     }
     val department = fields["departamento"].orEmpty()
@@ -277,7 +286,7 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
                             WorkerFieldSpec("paisNacimiento", "País de nacimiento"), WorkerFieldSpec("paisDocumento", "País del documento"),
                             WorkerFieldSpec("carneSaludVencimiento", "Vencimiento del carné de salud", date = true)
                         ), fields)
-                        WorkerAttachmentGrid(attachments, onChoose = { pendingKind = it; picker.launch(arrayOf("image/*", "application/pdf")) }, onRemove = { kind -> attachments.removeAll { it.kind == kind } })
+                        WorkerAttachmentGrid(attachments, onChoose = { pendingKind = it; picker.launch(arrayOf("image/*", "application/pdf")) }, onRemove = { kind -> attachments.removeAll { it.kind == kind } }, enabled = !importing)
                     }
                     WorkerFormSection("02", "Contacto y dirección", "Departamento y localidades del nomenclátor oficial del INE") {
                         WorkerFieldGrid(listOf(
@@ -309,10 +318,11 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
                     Spacer(Modifier.height(4.dp))
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                if (importing) LinearProgressIndicator(Modifier.fillMaxWidth())
                 Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = dismiss) { Text("Cancelar") }
                     Spacer(Modifier.width(10.dp))
-                    Button(onClick = { onSave(worker.copy(fields = fields.toMap().filterValues { it.isNotBlank() }, attachments = attachments.toList())) }, shape = RoundedCornerShape(10.dp)) {
+                    Button(onClick = { onSave(worker.copy(fields = fields.toMap().filterValues { it.isNotBlank() }, attachments = attachments.toList())) }, enabled = !importing, shape = RoundedCornerShape(10.dp)) {
                         Icon(Icons.Outlined.Check, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text("Guardar trabajador")
                     }
                 }
@@ -402,7 +412,7 @@ private fun WorkerDateField(value: String, onChange: (String) -> Unit, label: St
 }
 
 @Composable
-private fun WorkerAttachmentGrid(attachments: List<Attachment>, onChoose: (String) -> Unit, onRemove: (String) -> Unit) {
+private fun WorkerAttachmentGrid(attachments: List<Attachment>, onChoose: (String) -> Unit, onRemove: (String) -> Unit, enabled: Boolean = true) {
     val context = LocalContext.current
     val kinds = listOf("cedula_frente", "cedula_dorso", "carne_frente", "carne_dorso")
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -419,9 +429,9 @@ private fun WorkerAttachmentGrid(attachments: List<Attachment>, onChoose: (Strin
                             if (file != null && !file.uri.startsWith("content://")) Text("Ejemplo · sin archivo vinculado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                         }
                         if (file != null && file.uri.startsWith("content://")) IconButton(onClick = { openWorkerAttachment(context, file) }) { Icon(Icons.Outlined.OpenInNew, "Abrir ${file.name}", Modifier.size(18.dp)) }
-                        if (file != null) IconButton(onClick = { onRemove(kind) }, modifier = Modifier.size(36.dp)) { Icon(Icons.Outlined.Close, "Quitar ${attachmentTitle(kind)}", Modifier.size(18.dp)) }
+                        if (file != null) IconButton(onClick = { onRemove(kind) }, enabled = enabled, modifier = Modifier.size(36.dp)) { Icon(Icons.Outlined.Close, "Quitar ${attachmentTitle(kind)}", Modifier.size(18.dp)) }
                     }
-                    TextButton(onClick = { onChoose(kind) }, modifier = Modifier.align(Alignment.End), contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (file == null) "Adjuntar archivo" else "Cambiar archivo") }
+                    TextButton(onClick = { onChoose(kind) }, enabled = enabled, modifier = Modifier.align(Alignment.End), contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (file == null) "Adjuntar archivo" else "Cambiar archivo") }
                 }
             }
         }

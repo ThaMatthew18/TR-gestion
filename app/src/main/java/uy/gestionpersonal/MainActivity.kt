@@ -1,6 +1,7 @@
 package uy.gestionpersonal
 
 import android.os.Bundle
+import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
 import androidx.activity.ComponentActivity
@@ -9,16 +10,25 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import uy.gestionpersonal.data.MemoryRepository
+import uy.gestionpersonal.data.LocalStorage
+import uy.gestionpersonal.drive.DriveController
 import uy.gestionpersonal.ui.GestionApp
 import uy.gestionpersonal.ui.GestionTheme
 import uy.gestionpersonal.ui.ThemeMode
 import java.util.Locale
 
-class SessionViewModel : ViewModel() {
-    val repository = MemoryRepository()
+class SessionViewModel(application: Application) : AndroidViewModel(application) {
+    private val storage = LocalStorage(application)
+    private val loaded = runCatching { storage.load() }
+    val repository = MemoryRepository(seedDemoData = loaded.isSuccess, initialData = loaded.getOrNull(), onChanged = {
+        check(loaded.isSuccess) { "No se pudieron leer los datos guardados. Se conservará el archivo original." }
+        storage.save(it)
+    })
+    val drive = DriveController(application)
+    override fun onCleared() { drive.close(); super.onCleared() }
 }
 
 class MainActivity : ComponentActivity() {
@@ -47,7 +57,7 @@ class MainActivity : ComponentActivity() {
             GestionTheme(mode = ThemeMode.fromStored(modeName), onModeChange = { mode ->
                 modeName = mode.name
                 preferences.edit().putString("theme_mode", mode.name).apply()
-            }) { GestionApp(session.repository) }
+            }) { GestionApp(session.repository, session.drive) }
         }
     }
 }
