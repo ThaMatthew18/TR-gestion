@@ -20,12 +20,13 @@ class LocalStorageInstrumentedTest {
         val storage = LocalStorage(context, "qa-persistence.json")
         val source = MemoryRepository(seedDemoData = false, onChanged = storage::save)
         val worker = Worker("qa-rr", Empresa.RR, mapOf("nombres" to "Ana", "banco" to "Banco de prueba", "calle" to "Dirección de ejemplo"), listOf(Attachment("a", "cedula_frente", "Cédula.pdf", "content://test/a")))
-        source.saveWorker(worker.copy(fields = worker.fields + mapOf("tieneReingreso" to "Sí", "reingreso" to "2026-10-20")))
+        source.saveWorker(worker.withReentries(listOf(Reentry("first", "2026-02-01", "2026-03-01", "Primer período"), Reentry("second", "2026-10-20"))))
         source.saveWorker(Worker("qa-tr", Empresa.TRANSEO))
         source.saveDelivery(Delivery("delivery", Empresa.RR, worker.id, DeliveryKind.EPP, conformity = true, receiptName = "Conforme.pdf", receiptUri = "content://test/b"))
         source.saveTraining(Training("training", Empresa.TRANSEO, "qa-tr", "Charla", "2026-10-24", null))
         val restored = MemoryRepository(seedDemoData = false, initialData = storage.load())
         assertEquals(source.snapshot(), restored.snapshot())
+        assertEquals(2, restored.data(Empresa.RR).workers.single().reentryHistory.size)
         assertEquals(listOf("qa-rr"), restored.data(Empresa.RR).workers.map { it.id })
         assertEquals(listOf("qa-tr"), restored.data(Empresa.TRANSEO).workers.map { it.id })
         File(context.filesDir, "qa-persistence.json").delete()
@@ -42,6 +43,25 @@ class LocalStorageInstrumentedTest {
         content.open().use { assertEquals("PDF de prueba", it.readBytes().toString(Charsets.UTF_8)) }
         assertEquals(64, content.sha256.length)
         assertEquals("application/pdf", content.mime)
+    }
+
+    @Test fun oldSingleDateFileLoadsWithoutLosingItsWorkerOrDocuments() {
+        val name = "qa-legacy-history.json"
+        val storage = LocalStorage(context, name)
+        val repository = MemoryRepository(seedDemoData = false)
+        val original = Worker("legacy", Empresa.RR, mapOf("reingreso" to "2026-10-20", "tieneReingreso" to "Sí"), listOf(Attachment("doc", "cedula", "Documento.pdf", "content://test/document")))
+        repository.saveWorker(original)
+        storage.save(repository.snapshot())
+        val file = File(context.filesDir, name)
+        try {
+            val json = org.json.JSONObject(file.readText())
+            json.getJSONObject("RR").getJSONArray("workers").getJSONObject(0).remove("reentries")
+            file.writeText(json.toString())
+            val restored = storage.load()!!.getValue(Empresa.RR).workers.single()
+            assertEquals(original, restored)
+            assertEquals("2026-10-20", restored.reentryHistory.single().date)
+            assertEquals(original.attachments, restored.attachments)
+        } finally { file.delete() }
     }
 
     @Test fun androidTransportSupportsDrivePatchRequestsWithoutOpeningANetworkConnection() {

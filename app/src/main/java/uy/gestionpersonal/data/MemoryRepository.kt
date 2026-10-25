@@ -47,7 +47,7 @@ class MemoryRepository(
             }
         }) { "El documento pertenece a otra empresa y no puede cambiarse de espacio de trabajo." }
         val current = data(worker.empresa)
-        val snapshot = worker.copy(fields = worker.fields.toMap(), attachments = worker.attachments.toList())
+        val snapshot = worker.copy(fields = worker.fields.toMap(), attachments = worker.attachments.toList(), reentries = worker.reentries.toList())
         companies[worker.empresa] = current.copy(workers = current.workers.upsert(snapshot, Worker::id))
         persist()
     }

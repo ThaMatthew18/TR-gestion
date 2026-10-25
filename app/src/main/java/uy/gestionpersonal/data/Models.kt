@@ -19,25 +19,40 @@ data class Attachment(
     val uri: String
 )
 
+data class Reentry(val id: String, val date: String = "", val endDate: String = "", val notes: String = "")
+
 /** All user-editable fields and all attachments are optional. */
 data class Worker(
     val id: String,
     val empresa: Empresa,
     val fields: Map<String, String> = emptyMap(),
-    val attachments: List<Attachment> = emptyList()
+    val attachments: List<Attachment> = emptyList(),
+    val reentries: List<Reentry> = emptyList()
 ) {
+    /** Old single-date records remain readable without modifying their identity or documents. */
+    val reentryHistory: List<Reentry> get() = reentries.ifEmpty {
+        if (fields["tieneReingreso"] == "Sí" || (fields["tieneReingreso"].isNullOrBlank() && !fields["reingreso"].isNullOrBlank()))
+            listOf(Reentry("legacy-$id", fields["reingreso"].orEmpty())) else emptyList()
+    }
     val hasReentry: Boolean
-        get() = fields["tieneReingreso"] == "Sí" || (fields["tieneReingreso"].isNullOrBlank() && !fields["reingreso"].isNullOrBlank())
+        get() = reentryHistory.isNotEmpty()
     val reentryAnswer: String get() = if (hasReentry) "Sí" else "No"
-    val reentryDateText: String get() = if (hasReentry) fields["reingreso"].orEmpty() else ""
+    val reentryDateText: String get() = reentryHistory.filter { parseDate(it.date) != null }.maxByOrNull { it.date }?.date.orEmpty()
+
+    fun withReentries(history: List<Reentry>): Worker = copy(
+        fields = workerFieldsForSave(fields - "reingreso" + ("tieneReingreso" to if (history.isEmpty()) "No" else "Sí")),
+        reentries = history.toList()
+    )
 
     fun isActive(today: LocalDate = LocalDate.now()): Boolean {
         val lastEnd = fields["baja"].orEmpty()
-        if (lastEnd.isBlank()) return true
-        val end = parseDate(lastEnd) ?: return false
-        if (end.isAfter(today)) return true
-        val reentry = parseDate(reentryDateText) ?: return false
-        return reentry.isAfter(end) && !reentry.isAfter(today)
+        val end = parseDate(lastEnd)
+        val latest = reentryHistory.mapIndexedNotNull { index, entry ->
+            val start = parseDate(entry.date) ?: return@mapIndexedNotNull null
+            if (start.isAfter(today) || (end != null && !start.isAfter(end))) null else Triple(start, index, entry)
+        }.sortedWith(compareBy<Triple<LocalDate, Int, Reentry>> { it.first }.thenBy { it.second }).lastOrNull()?.third
+        if (latest != null) return latest.endDate.isBlank() || (parseDate(latest.endDate)?.isAfter(today) == true)
+        return lastEnd.isBlank() || end?.isAfter(today) == true
     }
 
     val displayName: String

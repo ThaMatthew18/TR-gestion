@@ -90,4 +90,22 @@ class ReportExportInstrumentedTest {
         blankPdf.outputStream().use { exportWorkerPdf(context, it, Worker("SIN-DATOS", Empresa.RR), source) }
         ParcelFileDescriptor.open(blankPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor -> PdfRenderer(descriptor).use { assertEquals(1, it.pageCount) } }
     }
+
+    @Test fun longHistoryExportsEveryPeriodAndAllNotesAcrossPdfPagesAndExcelRows() {
+        val directory = File(context.filesDir, "qa").apply { mkdirs() }
+        val entries = (1..40).map { index -> Reentry("r$index", "2026-01-${((index - 1) % 28 + 1).toString().padStart(2, '0')}", "2026-02-01", "Período $index: " + "Observación completa del historial laboral. ".repeat(7) + "FIN_$index") }
+        val worker = Worker("HISTORY", Empresa.RR, mapOf("nombres" to "Ana", "apellidos" to "Pérez"), reentries = entries)
+        val source = CompanyData(listOf(worker))
+        val pdf = File(directory, "ficha-historial.pdf")
+        pdf.outputStream().use { exportWorkerPdf(context, it, worker, source) }
+        ParcelFileDescriptor.open(pdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+            PdfRenderer(descriptor).use { assertTrue(it.pageCount > 2) }
+        }
+        val excel = File(directory, "ficha-historial.xlsx")
+        excel.outputStream().use { writeWorkerExcel(it, worker, source) }
+        ZipFile(excel).use { zip ->
+            val history = zip.getInputStream(zip.getEntry("xl/worksheets/sheet5.xml")).bufferedReader().readText()
+            entries.forEach { assertTrue(history.contains(it.notes)) }
+        }
+    }
 }

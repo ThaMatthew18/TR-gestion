@@ -134,7 +134,8 @@ fun writeCompanyExcel(
                 listOf(training.id, empresa.displayName, training.workerId, names[training.workerId] ?: "Sin asignar",
                     training.title, training.date, training.validityMonths?.let { "$it meses" } ?: "Sin vencimiento",
                     training.expiryDate()?.toString().orEmpty(), reportStatusLabel(training.status(today)), training.notes)
-            })
+            }),
+        "Reingresos" to reentryRows(selected.workers)
     )
     writeWorkbook(output, sheets)
 }
@@ -163,10 +164,15 @@ fun writeWorkerExcel(output: OutputStream, worker: Worker, source: CompanyData, 
         "Ficha" to ficha,
         "Adjuntos" to (listOf(listOf("Tipo", "Archivo", "Estado")) + worker.attachments.map { listOf(it.kind, it.name, if (it.uri.isBlank()) "Ejemplo sin archivo vinculado" else "Archivo vinculado; original por separado") }),
         "Entregas" to (listOf(listOf("ID", "Tipo", "Prenda / EPP", "Talle", "Fecha", "Cantidad", "Conformidad", "Observaciones", "Constancia")) + deliveries.map { listOf(it.id, if (it.kind == DeliveryKind.EPP) "EPP" else "Uniforme", it.item, it.size, it.date, it.quantity, if (it.conformity) "Sí" else "No registrada", it.notes, it.receiptName) }),
-        "Capacitaciones" to (listOf(listOf("ID", "Título", "Fecha de dictado", "Vigencia", "Vencimiento", "Estado", "Observaciones")) + trainings.map { listOf(it.id, it.title, it.date, it.validityMonths?.let { months -> "$months meses" } ?: "Sin vencimiento", it.expiryDate()?.toString().orEmpty(), reportStatusLabel(it.status(today)), it.notes) })
+        "Capacitaciones" to (listOf(listOf("ID", "Título", "Fecha de dictado", "Vigencia", "Vencimiento", "Estado", "Observaciones")) + trainings.map { listOf(it.id, it.title, it.date, it.validityMonths?.let { months -> "$months meses" } ?: "Sin vencimiento", it.expiryDate()?.toString().orEmpty(), reportStatusLabel(it.status(today)), it.notes) }),
+        "Reingresos" to reentryRows(listOf(worker))
     )
     writeWorkbook(output, sheets)
 }
+
+private fun reentryRows(workers: List<Worker>): List<List<String>> =
+    listOf(listOf("ID trabajador", "Empresa", "Trabajador", "N.º de reingreso", "ID reingreso", "Fecha de reingreso", "Fecha de baja del período", "Observaciones")) +
+        workers.flatMap { worker -> worker.reentryHistory.mapIndexed { index, entry -> listOf(worker.id, worker.empresa.displayName, worker.displayName, (index + 1).toString(), entry.id, entry.date, entry.endDate, entry.notes) } }
 
 private fun writeWorkbook(output: OutputStream, sheets: List<Pair<String, List<List<String>>>>) {
     ZipOutputStream(output).use { zip ->

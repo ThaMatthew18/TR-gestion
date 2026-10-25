@@ -116,7 +116,7 @@ fun ReportesScreen(empresa: Empresa, repository: MemoryRepository) {
                 excelLauncher.launch("Personal_${empresa.name}_${LocalDate.now()}.xlsx")
             }, enabled = !busy, modifier = Modifier.weight(1f)) { Text("Guardar Excel") }
         }
-        Text("Archivo .xlsx con hojas de resumen, personal, entregas y capacitaciones, filtros de columna y encabezados fijos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Archivo .xlsx con hojas de resumen, personal, entregas, capacitaciones y reingresos, filtros de columna y encabezados fijos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         HorizontalDivider(Modifier.padding(vertical = 6.dp))
         Text("Ficha individual", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -130,7 +130,7 @@ fun ReportesScreen(empresa: Empresa, repository: MemoryRepository) {
             }
         }, enabled = !busy && !individualExporter.busy && selectedWorker != null, modifier = Modifier.fillMaxWidth()) { Text("Guardar ficha PDF") }
         OutlinedButton(onClick = { selectedWorker?.let { individualExporter.export(it, WorkerExportFormat.EXCEL) } }, enabled = !busy && !individualExporter.busy && selectedWorker != null, modifier = Modifier.fillMaxWidth()) { Text("Guardar ficha Excel") }
-        Text("Una página con los seis bloques, referencias y hasta tres miniaturas de fotos disponibles. Los valores largos y los históricos extensos se abrevian; Excel conserva los datos completos y los archivos originales se mantienen por separado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Resumen de los seis bloques, referencias y hasta tres miniaturas. El historial de reingresos agrega un anexo cuando necesita más espacio o contiene observaciones. Los otros históricos se resumen; Excel conserva los datos completos y los archivos originales se mantienen por separado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Text("El Excel individual incluye una ficha por bloques, adjuntos y los históricos completos del trabajador seleccionado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (busy || individualExporter.busy) LinearProgressIndicator(Modifier.fillMaxWidth())

@@ -37,6 +37,7 @@ import uy.gestionpersonal.data.Empresa
 import uy.gestionpersonal.data.MemoryRepository
 import uy.gestionpersonal.data.UruguayGeography
 import uy.gestionpersonal.data.Worker
+import uy.gestionpersonal.data.Reentry
 import uy.gestionpersonal.data.newId
 import uy.gestionpersonal.data.importDocument
 import uy.gestionpersonal.reports.*
@@ -252,14 +253,16 @@ private fun WorkerEditorDialog(worker: Worker, repository: MemoryRepository, onD
     val context = LocalContext.current
     val fields = remember(worker.id) { mutableStateMapOf<String, String>().apply { putAll(worker.fields) } }
     val attachments = remember(worker.id) { mutableStateListOf<Attachment>().apply { addAll(worker.attachments) } }
+    val reentries = remember(worker.id) { mutableStateListOf<Reentry>().apply { addAll(worker.reentryHistory) } }
+    var removingReentry by remember { mutableStateOf<Reentry?>(null) }
     var pendingKind by remember { mutableStateOf("") }
     var importing by remember { mutableStateOf(false) }
     val importScope = rememberCoroutineScope()
     var discardConfirmation by remember { mutableStateOf(false) }
     val exporter = rememberWorkerExporter(worker.empresa, repository)
     var exportMenu by remember { mutableStateOf(false) }
-    fun draftWorker() = worker.copy(fields = workerFieldsForSave(fields.toMap()), attachments = attachments.toList())
-    val changed = fields.toMap().filterValues { it.isNotBlank() } != worker.fields.filterValues { it.isNotBlank() } || attachments.toList() != worker.attachments
+    fun draftWorker() = worker.copy(fields = fields.toMap(), attachments = attachments.toList()).withReentries(reentries.toList())
+    val changed = fields.toMap().filterValues { it.isNotBlank() } != worker.fields.filterValues { it.isNotBlank() } || attachments.toList() != worker.attachments || reentries.toList() != worker.reentryHistory
     val dismiss = { if (changed) discardConfirmation = true else onDismiss() }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null && pendingKind.isNotBlank()) {
@@ -331,11 +334,30 @@ private fun WorkerEditorDialog(worker: Worker, repository: MemoryRepository, onD
                             add(WorkerFieldSpec("proyecto", "Proyecto / nombre de obra"))
                             if (fields["aportacion"].orEmpty().contains("Construcción") || !fields["obraBps"].isNullOrBlank()) add(WorkerFieldSpec("obraBps", "Número de obra BPS"))
                             add(WorkerFieldSpec("categoria", "Categoría / puesto")); add(WorkerFieldSpec("modalidad", "Modalidad de contratación", options = listOf("A término", "Por tiempo indeterminado", "Por obra", "Jornalero", "Otra")))
-                            add(WorkerFieldSpec("alta", "Fecha de alta", date = true)); add(WorkerFieldSpec("baja", "Fecha de baja", date = true))
-                            add(WorkerFieldSpec("tieneReingreso", "¿Tiene fecha de reingreso?", options = listOf("Sí", "No")))
-                            val hasReentry = fields["tieneReingreso"] == "Sí" || (fields["tieneReingreso"].isNullOrBlank() && !fields["reingreso"].isNullOrBlank())
-                            if (hasReentry) add(WorkerFieldSpec("reingreso", "Fecha de reingreso", date = true))
+                            add(WorkerFieldSpec("alta", "Fecha de alta inicial", date = true)); add(WorkerFieldSpec("baja", "Fecha de baja inicial", date = true))
                         }, fields)
+                        Text("Historial de reingresos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(if (reentries.isEmpty()) "Tiene reingresos: No" else "Tiene reingresos: Sí · ${reentries.size} registro(s)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Conservá la ficha y agregá un período cada vez que vuelva. Para una nueva baja, completá la fecha en el reingreso correspondiente.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        reentries.forEachIndexed { index, entry ->
+                            key(entry.id) {
+                                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp)) {
+                                    Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text("Reingreso ${index + 1}", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                                            IconButton(onClick = { removingReentry = entry }) { Icon(Icons.Outlined.DeleteOutline, "Quitar reingreso ${index + 1}") }
+                                        }
+                                        fun update(updated: Reentry) { val position = reentries.indexOfFirst { it.id == entry.id }; if (position >= 0) reentries[position] = updated }
+                                        WorkerDateField(entry.date, { update(entry.copy(date = it)) }, "Fecha de reingreso ${index + 1}", Modifier.fillMaxWidth())
+                                        WorkerDateField(entry.endDate, { update(entry.copy(endDate = it)) }, "Fecha de baja del reingreso ${index + 1}", Modifier.fillMaxWidth())
+                                        OutlinedTextField(entry.notes, { update(entry.copy(notes = it)) }, label = { Text("Observaciones del reingreso ${index + 1}") }, modifier = Modifier.fillMaxWidth(), minLines = 2, shape = RoundedCornerShape(10.dp))
+                                    }
+                                }
+                            }
+                        }
+                        OutlinedButton(onClick = { reentries.add(Reentry(newId())) }, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp)); Text("Agregar reingreso")
+                        }
                     }
                     Text("Exportar genera un archivo con los datos actuales de la ficha. Tocá Guardar trabajador para conservar los cambios en la aplicación.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
@@ -356,6 +378,12 @@ private fun WorkerEditorDialog(worker: Worker, repository: MemoryRepository, onD
         onDismissRequest = { discardConfirmation = false }, title = { Text("¿Descartar los cambios?") }, text = { Text("Los cambios de esta ficha todavía no se guardaron.") },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Descartar") } }, dismissButton = { TextButton(onClick = { discardConfirmation = false }) { Text("Seguir editando") } }
     )
+    removingReentry?.let { entry -> AlertDialog(
+        onDismissRequest = { removingReentry = null }, title = { Text("¿Quitar este reingreso?") },
+        text = { Text("Se quitará únicamente este período al guardar la ficha. El trabajador y sus demás registros se conservan.") },
+        confirmButton = { TextButton(onClick = { reentries.removeAll { it.id == entry.id }; removingReentry = null }) { Text("Quitar reingreso") } },
+        dismissButton = { TextButton(onClick = { removingReentry = null }) { Text("Cancelar") } }
+    ) }
 }
 
 @Composable

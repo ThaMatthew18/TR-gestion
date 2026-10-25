@@ -24,7 +24,8 @@ class LocalStorage(context: Context, name: String = "personnel-v1.json") {
                 data.getJSONArray("workers").objects().map { value ->
                     val fields = value.getJSONObject("fields")
                     Worker(value.getString("id"), company, fields.keys().asSequence().associateWith { fields.getString(it) },
-                        value.getJSONArray("attachments").objects().map { a -> Attachment(a.getString("id"), a.getString("kind"), a.getString("name"), a.getString("uri")) })
+                        value.getJSONArray("attachments").objects().map { a -> Attachment(a.getString("id"), a.getString("kind"), a.getString("name"), a.getString("uri")) },
+                        value.optJSONArray("reentries")?.objects()?.map { r -> Reentry(r.getString("id"), r.optString("date"), r.optString("endDate"), r.optString("notes")) }.orEmpty())
                 },
                 data.getJSONArray("deliveries").objects().map { d -> Delivery(d.getString("id"), company, d.getString("workerId"), DeliveryKind.valueOf(d.getString("kind")), d.getString("item"), d.getString("size"), d.getString("date"), d.getString("quantity"), d.getBoolean("conformity"), d.getString("notes"), d.getString("receiptName"), d.getString("receiptUri")) },
                 data.getJSONArray("trainings").objects().map { t -> Training(t.getString("id"), company, t.getString("workerId"), t.getString("title"), t.getString("date"), if (t.isNull("months")) null else t.getInt("months"), t.getString("notes")) }
@@ -37,7 +38,7 @@ class LocalStorage(context: Context, name: String = "personnel-v1.json") {
         Empresa.entries.forEach { company ->
             val data = snapshot.getValue(company)
             root.put(company.name, JSONObject()
-                .put("workers", JSONArray(data.workers.map { w -> JSONObject().put("id", w.id).put("fields", JSONObject(w.fields)).put("attachments", JSONArray(w.attachments.map { a -> JSONObject().put("id", a.id).put("kind", a.kind).put("name", a.name).put("uri", a.uri) })) }))
+                .put("workers", JSONArray(data.workers.map { w -> JSONObject().put("id", w.id).put("fields", JSONObject(w.fields)).put("attachments", JSONArray(w.attachments.map { a -> JSONObject().put("id", a.id).put("kind", a.kind).put("name", a.name).put("uri", a.uri) })).put("reentries", JSONArray(w.reentries.map { r -> JSONObject().put("id", r.id).put("date", r.date).put("endDate", r.endDate).put("notes", r.notes) })) }))
                 .put("deliveries", JSONArray(data.deliveries.map { d -> JSONObject().put("id", d.id).put("workerId", d.workerId).put("kind", d.kind.name).put("item", d.item).put("size", d.size).put("date", d.date).put("quantity", d.quantity).put("conformity", d.conformity).put("notes", d.notes).put("receiptName", d.receiptName).put("receiptUri", d.receiptUri) }))
                 .put("trainings", JSONArray(data.trainings.map { t -> JSONObject().put("id", t.id).put("workerId", t.workerId).put("title", t.title).put("date", t.date).put("months", t.validityMonths ?: JSONObject.NULL).put("notes", t.notes) })))
         }

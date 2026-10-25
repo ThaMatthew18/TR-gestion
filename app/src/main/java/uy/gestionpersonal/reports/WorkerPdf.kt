@@ -13,7 +13,7 @@ import uy.gestionpersonal.data.*
 import java.io.OutputStream
 import java.time.LocalDate
 
-/** One-page A4 overview. Available image thumbnails are embedded; original files remain separate. */
+/** A4 overview with extra pages when the reentry history needs more space. */
 fun exportWorkerPdf(context: Context, outputStream: OutputStream, worker: Worker, companyData: CompanyData) {
     val deliveries = companyData.deliveries.filter { it.empresa == worker.empresa && it.workerId == worker.id }
     val trainings = companyData.trainings.filter { it.empresa == worker.empresa && it.workerId == worker.id }
@@ -29,6 +29,25 @@ fun exportWorkerPdf(context: Context, outputStream: OutputStream, worker: Worker
         val muted = Color.rgb(89, 106, 119)
         val body = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = navy; textSize = 8.7f; typeface = Typeface.create("sans-serif", Typeface.NORMAL) }
         val heading = Paint(body).apply { textSize = 10f; typeface = Typeface.create("sans-serif", Typeface.BOLD); color = teal }
+        val history = worker.reentryHistory
+        val appendix = history.size > 3 || history.any { it.notes.isNotBlank() }
+        fun wrap(value: String): List<String> = value.lines().flatMap { line ->
+            buildList {
+                var remaining = line.replace('\t', ' ')
+                if (remaining.isBlank()) add("")
+                while (remaining.isNotEmpty()) {
+                    val maximum = body.breakText(remaining, true, 510f, null).coerceAtLeast(1)
+                    val wordBreak = if (maximum < remaining.length) remaining.take(maximum).indexOfLast { it.isWhitespace() } else -1
+                    val count = if (wordBreak > 0) wordBreak else maximum
+                    add(remaining.take(count)); remaining = remaining.drop(count).trimStart()
+                }
+            }
+        }
+        val historyPages = if (appendix) history.flatMapIndexed { index, entry ->
+            listOf("Reingreso ${index + 1} | Entrada: ${entry.date.ifBlank { "Sin fecha" }} | Baja: ${entry.endDate.ifBlank { "Sin registrar" }}") +
+                wrap("Observaciones: ${entry.notes.ifBlank { "Sin observaciones" }}") + listOf("")
+        }.chunked(42) else emptyList()
+        val pageCount = 1 + historyPages.size
         fun text(value: String, x: Float, y: Float, width: Float = 519f, paint: Paint = body) {
             val clean = value.replace(Regex("[\\r\\n\\t]+"), " ").ifBlank { "—" }
             val safe = if (paint.measureText(clean) <= width) clean else {
@@ -59,6 +78,13 @@ fun exportWorkerPdf(context: Context, outputStream: OutputStream, worker: Worker
         var rightY = section("04  Datos bancarios", values("banco", "tipoCuenta", "numeroCuenta"), 307f, 167f)
         rightY = section("05  Talles", values("talleRemera", "talleCamisa", "tallePantalon", "talleBuzo", "talleCampera", "talleCalzado"), 307f, rightY)
         section("06  Relación laboral", listOf("Empresa contratante" to worker.empresa.displayName) + values("aportacion", "proyecto", "obraBps", "categoria", "modalidad", "alta", "baja", "tieneReingreso", "reingreso"), 307f, rightY)
+
+        text("Historial de reingresos (${history.size})", 38f, 450f, 249f, heading)
+        if (history.isEmpty()) text("Sin reingresos registrados.", 38f, 468f, 249f)
+        history.take(3).forEachIndexed { index, entry ->
+            text("${index + 1}. ${entry.date.ifBlank { "Sin fecha" }} · Baja: ${entry.endDate.ifBlank { "Sin registrar" }}", 38f, 468f + index * 13f, 249f)
+        }
+        if (appendix) text("Historial completo y observaciones en anexo.", 38f, 510f, 249f, Paint(body).apply { color = muted; textSize = 8f })
 
         text("Adjuntos · ${worker.attachments.size} referencia(s)", 38f, 529f, 519f, heading)
         val attachmentNames = worker.attachments.map { "${it.kind}: ${it.name}" }
@@ -95,8 +121,21 @@ fun exportWorkerPdf(context: Context, outputStream: OutputStream, worker: Worker
         val footer = Paint(body).apply { color = muted; textSize = 8f }
         text("Resumen de 1 página: valores largos e históricos extensos se abrevian. Excel conserva los datos completos.", 38f, 769f, 519f, footer)
         text("Adjuntos: nombres y hasta 3 miniaturas disponibles. Los archivos originales se conservan por separado.", 38f, 784f, 519f, footer)
-        text("Gestión de Personal · ${worker.empresa.displayName} · 1 / 1", 38f, 814f, 519f, footer)
+        text("Gestión de Personal · ${worker.empresa.displayName} · 1 / $pageCount", 38f, 814f, 519f, footer)
         document.finishPage(page)
+        historyPages.forEachIndexed { index, lines ->
+            val historyPage = document.startPage(PdfDocument.PageInfo.Builder(595, 842, index + 2).create())
+            val target = historyPage.canvas
+            target.drawRect(0f, 0f, 595f, 91f, background)
+            target.drawText("Historial de reingresos", 38f, 43f, whiteTitle)
+            target.drawText("${worker.empresa.displayName} · ID: ${worker.id}", 38f, 67f, Paint(body).apply { color = Color.WHITE })
+            val titleCount = heading.breakText(worker.displayName, true, 519f, null)
+            target.drawText(worker.displayName.take(titleCount), 38f, 119f, heading)
+            lines.forEachIndexed { row, line -> target.drawText(line, 38f, 150f + row * 14f, body) }
+            target.drawLine(38f, 788f, 557f, 788f, Paint().apply { color = Color.LTGRAY })
+            target.drawText("Gestión de Personal · ${worker.empresa.displayName} · ${index + 2} / $pageCount", 38f, 814f, footer)
+            document.finishPage(historyPage)
+        }
         document.writeTo(outputStream)
     } finally {
         document.close()
