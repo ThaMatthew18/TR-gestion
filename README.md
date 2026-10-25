@@ -1,4 +1,4 @@
-# Gestión de Personal — R&R y TRANSEO
+# Gestión de Personal
 
 Aplicación Android en **Kotlin y Jetpack Compose** basada en el pliego suministrado. Las dos empresas tienen las mismas pantallas y mantienen separados sus trabajadores, legajos, uniformes, EPP, capacitaciones y reportes.
 
