@@ -26,12 +26,32 @@ data class Worker(
     val fields: Map<String, String> = emptyMap(),
     val attachments: List<Attachment> = emptyList()
 ) {
+    val hasReentry: Boolean
+        get() = fields["tieneReingreso"] == "Sí" || (fields["tieneReingreso"].isNullOrBlank() && !fields["reingreso"].isNullOrBlank())
+    val reentryAnswer: String get() = if (hasReentry) "Sí" else "No"
+    val reentryDateText: String get() = if (hasReentry) fields["reingreso"].orEmpty() else ""
+
+    fun isActive(today: LocalDate = LocalDate.now()): Boolean {
+        val lastEnd = fields["baja"].orEmpty()
+        if (lastEnd.isBlank()) return true
+        val end = parseDate(lastEnd) ?: return false
+        if (end.isAfter(today)) return true
+        val reentry = parseDate(reentryDateText) ?: return false
+        return reentry.isAfter(end) && !reentry.isAfter(today)
+    }
+
     val displayName: String
         get() = listOf(fields["nombres"].orEmpty(), fields["apellidos"].orEmpty())
             .map(String::trim)
             .filter(String::isNotEmpty)
             .joinToString(" ")
             .ifBlank { "Trabajador sin nombre" }
+}
+
+fun workerFieldsForSave(fields: Map<String, String>): Map<String, String> = fields.filterValues { it.isNotBlank() }.toMutableMap().apply {
+    val enabled = this["tieneReingreso"] == "Sí" || (this["tieneReingreso"].isNullOrBlank() && !this["reingreso"].isNullOrBlank())
+    this["tieneReingreso"] = if (enabled) "Sí" else "No"
+    if (!enabled) remove("reingreso")
 }
 
 data class Delivery(

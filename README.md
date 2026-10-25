@@ -6,7 +6,7 @@ Aplicación Android en **Kotlin y Jetpack Compose** basada en el pliego suminist
 
 ## Probar en un teléfono
 
-1. Usá el APK de prueba `GestionPersonal-Drive-preview.apk`, entregado junto al código, en un teléfono con **Android 8.0 o superior**. La conexión real con Google necesita completar primero la [configuración de Cloud](docs/google-drive.md).
+1. Usá el APK de prueba `GestionPersonal-reingreso.apk`, versión **1.3-reingreso**, entregado junto al código, en un teléfono con **Android 8.0 o superior**. La conexión real con Google necesita completar primero la [configuración de Cloud](docs/google-drive.md).
 2. Abrilo desde Archivos y autorizá la instalación desde esa aplicación si Android lo solicita. Es un APK de demostración firmado para depuración.
 3. Iniciá **Gestión de Personal**, elegí **R&R** o **TRANSEO** y recorré el menú. **Cambiar empresa** vuelve a la selección inicial.
 
@@ -23,14 +23,22 @@ Además del **Resumen**, el menú ofrece siete módulos:
 | Módulo | Funciones |
 | --- | --- |
 | Personal | Alta, edición, búsqueda, estado activo/baja y eliminación; ficha en seis bloques. |
-| Legajos | Documentos por trabajador, selección de imágenes/PDF, apertura de archivos y ficha individual PDF. |
+| Legajos | Documentos por trabajador, selección de imágenes/PDF, apertura de archivos y ficha individual PDF/Excel. |
 | Uniformes | Historial de entregas por prenda, trabajador, talle, cantidad y fecha. |
 | EPP | Entregas de equipos, recepción en conformidad y constancia adjunta opcional. |
 | Capacitaciones | Títulos habituales o personalizados, fecha, vigencia y alertas por estado. |
-| Reportes | Excel consolidado filtrado y PDF individual. |
+| Reportes | Excel consolidado filtrado y ficha individual PDF/Excel. |
 | Google Drive | Selección de cuenta en el dispositivo y actualización de adjuntos por empresa. |
 
 **Todos los campos de carga son opcionales.** Se puede guardar una ficha, entrega o capacitación incompleta y completarla después. Los identificadores internos y la empresa se asignan automáticamente.
+
+## Reingreso y exportación individual
+
+En **Personal → Ver ficha → Relación laboral y asignación**, la pregunta **¿Tiene fecha de reingreso?** permite elegir Sí o No. Al elegir Sí aparece el selector de fecha; al elegir No se quita la fecha anterior. La respuesta y fecha quedan guardadas localmente e incluidas en PDF y Excel. Un reingreso posterior a la última baja vuelve a contar al trabajador como Activo cuando llega esa fecha; una fecha futura todavía no lo reactiva.
+
+En el encabezado de la ficha, tocá **Exportar ficha** y elegí **PDF** o **Excel**. También están disponibles en las opciones de Personal, Legajos y Reportes. Android permite elegir el nombre y carpeta de destino. Exportar usa los datos actuales del formulario; para conservar una edición en la aplicación hay que tocar **Guardar trabajador**.
+
+El PDF es un resumen A4 de una página. El Excel individual incluye cuatro hojas: **Ficha**, **Adjuntos**, **Entregas** y **Capacitaciones**, con todos los valores e historiales del trabajador elegido y su empresa. Las referencias de adjuntos no incorporan los archivos originales.
 
 ## Abrir el código en Android Studio
 

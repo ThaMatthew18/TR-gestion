@@ -20,7 +20,7 @@ class LocalStorageInstrumentedTest {
         val storage = LocalStorage(context, "qa-persistence.json")
         val source = MemoryRepository(seedDemoData = false, onChanged = storage::save)
         val worker = Worker("qa-rr", Empresa.RR, mapOf("nombres" to "Ana", "banco" to "Banco de prueba", "calle" to "Dirección de ejemplo"), listOf(Attachment("a", "cedula_frente", "Cédula.pdf", "content://test/a")))
-        source.saveWorker(worker)
+        source.saveWorker(worker.copy(fields = worker.fields + mapOf("tieneReingreso" to "Sí", "reingreso" to "2026-10-20")))
         source.saveWorker(Worker("qa-tr", Empresa.TRANSEO))
         source.saveDelivery(Delivery("delivery", Empresa.RR, worker.id, DeliveryKind.EPP, conformity = true, receiptName = "Conforme.pdf", receiptUri = "content://test/b"))
         source.saveTraining(Training("training", Empresa.TRANSEO, "qa-tr", "Charla", "2026-10-24", null))

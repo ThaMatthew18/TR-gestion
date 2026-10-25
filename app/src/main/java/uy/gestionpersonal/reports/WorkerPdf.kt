@@ -44,7 +44,7 @@ fun exportWorkerPdf(context: Context, outputStream: OutputStream, worker: Worker
             return y + 12f
         }
         fun values(vararg keys: String): List<Pair<String, String>> = keys.map { key ->
-            (workerExportFields.find { it.first == key }?.second ?: key) to worker.fields[key].orEmpty()
+            (workerExportFields.find { it.first == key }?.second ?: key) to workerExportValue(worker, key)
         }
         val background = Paint().apply { color = navy }
         canvas.drawRect(0f, 0f, 595f, 91f, background)
@@ -58,7 +58,7 @@ fun exportWorkerPdf(context: Context, outputStream: OutputStream, worker: Worker
         section("03  Fonasa", values("hijosFonasa", "conyugeFonasa"), 38f, leftY)
         var rightY = section("04  Datos bancarios", values("banco", "tipoCuenta", "numeroCuenta"), 307f, 167f)
         rightY = section("05  Talles", values("talleRemera", "talleCamisa", "tallePantalon", "talleBuzo", "talleCampera", "talleCalzado"), 307f, rightY)
-        section("06  Relación laboral", listOf("Empresa contratante" to worker.empresa.displayName) + values("aportacion", "proyecto", "obraBps", "categoria", "modalidad", "alta", "baja"), 307f, rightY)
+        section("06  Relación laboral", listOf("Empresa contratante" to worker.empresa.displayName) + values("aportacion", "proyecto", "obraBps", "categoria", "modalidad", "alta", "baja", "tieneReingreso", "reingreso"), 307f, rightY)
 
         text("Adjuntos · ${worker.attachments.size} referencia(s)", 38f, 529f, 519f, heading)
         val attachmentNames = worker.attachments.map { "${it.kind}: ${it.name}" }

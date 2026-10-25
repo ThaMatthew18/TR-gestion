@@ -55,7 +55,7 @@ class ReportExportInstrumentedTest {
             "aportacion" to "Aportación 4: Construcción (Ley 14.411)",
             "proyecto" to "Construcción y acondicionamiento del complejo administrativo Centro Sur — Etapa 2",
             "obraBps" to "123456789", "categoria" to "Oficial especializada en mantenimiento", "modalidad" to "A término hasta finalización de obra",
-            "alta" to "2026-02-10", "baja" to ""
+            "alta" to "2026-02-10", "baja" to "2026-07-01", "tieneReingreso" to "Sí", "reingreso" to "2026-08-15"
         ), (1..6).map { index -> Attachment("a$index", if (index < 3) "Cédula · Foto $index" else "Legajo", "Documento de demostración número $index.png", if (index < 3) Uri.fromFile(image).toString() else "") })
         val foreign = Worker("TR-001", Empresa.TRANSEO, mapOf("nombres" to "TRANSEO_ONLY_RECORD", "proyecto" to "Proyecto Norte"))
         val deliveries = (1..8).map { index -> Delivery("d$index", Empresa.RR, worker.id, if (index % 2 == 0) DeliveryKind.EPP else DeliveryKind.UNIFORME,
@@ -73,6 +73,8 @@ class ReportExportInstrumentedTest {
         }
         val rr = File(directory, "personal-rr.xlsx")
         val transeo = File(directory, "personal-transeo.xlsx")
+        val individual = File(directory, "ficha-rr.xlsx")
+        individual.outputStream().use { writeWorkerExcel(it, worker, source) }
         rr.outputStream().use { writeCompanyExcel(it, Empresa.RR, source, today = LocalDate.of(2026, 10, 23)) }
         transeo.outputStream().use { writeCompanyExcel(it, Empresa.TRANSEO, source, today = LocalDate.of(2026, 10, 23)) }
         fun xml(file: File): String = ZipFile(file).use { zip -> zip.entries().asSequence().joinToString("\n") { entry -> zip.getInputStream(entry).bufferedReader().use { it.readText() } } }
