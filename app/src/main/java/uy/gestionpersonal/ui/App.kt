@@ -20,11 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uy.gestionpersonal.data.*
 import uy.gestionpersonal.reports.ReportesScreen
+import uy.gestionpersonal.drive.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -36,11 +38,20 @@ private enum class Module(val label: String, val icon: ImageVector) {
     UNIFORMES("Uniformes", Icons.Outlined.Checkroom),
     EPP("EPP", Icons.Outlined.HealthAndSafety),
     CAPACITACIONES("Capacitaciones", Icons.Outlined.School),
-    REPORTES("Reportes", Icons.Outlined.Assessment)
+    REPORTES("Reportes", Icons.Outlined.Assessment),
+    DRIVE("Google Drive", Icons.Outlined.CloudSync)
 }
 
 @Composable
-fun GestionApp(repository: MemoryRepository) {
+fun GestionApp(repository: MemoryRepository, driveController: DriveController? = null) {
+    val context = LocalContext.current
+    val drive = remember(driveController) { driveController ?: DriveController(context) }
+    DisposableEffect(drive) { onDispose { if (driveController == null) drive.close() } }
+    DriveHost(drive, repository) { GestionContent(repository, drive) }
+}
+
+@Composable
+private fun GestionContent(repository: MemoryRepository, drive: DriveController) {
     var companyName by rememberSaveable { mutableStateOf<String?>(null) }
     var moduleName by rememberSaveable { mutableStateOf(Module.INICIO.name) }
     val empresa = companyName?.let(Empresa::valueOf)
@@ -92,8 +103,9 @@ fun GestionApp(repository: MemoryRepository) {
                         }
                         Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.tertiaryContainer).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Outlined.Science, null, Modifier.size(15.dp), tint = MaterialTheme.colorScheme.onTertiaryContainer)
-                            Text(" DEMO · Datos ficticios. Los cambios duran durante esta sesión.", color = MaterialTheme.colorScheme.onTertiaryContainer, fontSize = 11.sp)
+                            Text(" DEMO · Incluye ejemplos. Los cambios se guardan en este dispositivo.", color = MaterialTheme.colorScheme.onTertiaryContainer, fontSize = 11.sp)
                         }
+                        repository.persistenceError?.let { warning -> Surface(color = MaterialTheme.colorScheme.errorContainer) { Text(warning, Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onErrorContainer, fontSize = 12.sp) } }
                         key(empresa, module) {
                             Box(Modifier.weight(1f).fillMaxWidth()) {
                                 when (module) {
@@ -104,6 +116,7 @@ fun GestionApp(repository: MemoryRepository) {
                                     Module.EPP -> DeliveriesScreen(empresa, repository, DeliveryKind.EPP)
                                     Module.CAPACITACIONES -> TrainingsScreen(empresa, repository)
                                     Module.REPORTES -> ReportesScreen(empresa, repository)
+                                    Module.DRIVE -> DriveScreen(empresa, repository, drive)
                                 }
                             }
                         }
@@ -172,8 +185,8 @@ private fun CompanySelection(onSelect: (Empresa) -> Unit) {
                     Text("Los registros de cada empresa se mantienen separados", color = Muted, fontSize = 12.sp, lineHeight = 18.sp)
                 }
                 Spacer(Modifier.height(24.dp))
-                Text("VERSIÓN DEMO · FRONTEND", fontSize = 10.sp, letterSpacing = 1.sp, color = Muted)
-                Text("Incluye ejemplos ficticios. La información se reinicia al cerrar el proceso de la aplicación.", color = Muted, fontSize = 11.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 8.dp))
+                Text("GESTIÓN DE PERSONAL · VERSIÓN 1.6", fontSize = 10.sp, letterSpacing = 1.sp, color = Muted)
+                Text("Incluye ejemplos ficticios. Los registros se conservan en el dispositivo. Conectá tu cuenta desde Google Drive para actualizar documentos.", color = Muted, fontSize = 11.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 8.dp))
             }
         }
     }
@@ -217,7 +230,7 @@ private fun Dashboard(empresa: Empresa, repository: MemoryRepository, onNavigate
                     Icon(item.icon, null, tint = Teal)
                     Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                         Text(item.label, fontWeight = FontWeight.SemiBold)
-                        Text(when(item) { Module.PERSONAL -> "Ficha personal y relación laboral"; Module.LEGAJOS -> "Identificación y documentos adjuntos"; Module.UNIFORMES -> "Talles e historial de entrega"; Module.EPP -> "Equipos y recepción en conformidad"; Module.CAPACITACIONES -> "Charlas, vigencias y alertas"; else -> "Excel consolidado y ficha individual en PDF" }, color = Muted, fontSize = 12.sp)
+                        Text(when(item) { Module.PERSONAL -> "Ficha personal y relación laboral"; Module.LEGAJOS -> "Identificación y documentos adjuntos"; Module.UNIFORMES -> "Talles e historial de entrega"; Module.EPP -> "Equipos y recepción en conformidad"; Module.CAPACITACIONES -> "Charlas, vigencias y alertas"; Module.DRIVE -> "Cuenta de Google y actualización de adjuntos"; else -> "Excel consolidado y ficha individual en PDF" }, color = Muted, fontSize = 12.sp)
                     }
                     Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, tint = Muted, modifier = Modifier.size(20.dp))
                 }

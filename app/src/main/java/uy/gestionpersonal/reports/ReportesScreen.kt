@@ -25,6 +25,7 @@ private data class PendingPdf(val worker: Worker, val source: CompanyData)
 fun ReportesScreen(empresa: Empresa, repository: MemoryRepository) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val individualExporter = rememberWorkerExporter(empresa, repository)
     val source = repository.data(empresa)
     val workers = source.workers.filter { it.empresa == empresa }
     var project by remember(empresa) { mutableStateOf("") }
@@ -90,6 +91,8 @@ fun ReportesScreen(empresa: Empresa, repository: MemoryRepository) {
     ) {
         Text("Reportes", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text("Información de ${empresa.displayName} lista para compartir.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        GeneralRosterSection(empresa, repository)
+        HorizontalDivider()
 
         Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -115,22 +118,26 @@ fun ReportesScreen(empresa: Empresa, repository: MemoryRepository) {
                 excelLauncher.launch("Personal_${empresa.name}_${LocalDate.now()}.xlsx")
             }, enabled = !busy, modifier = Modifier.weight(1f)) { Text("Guardar Excel") }
         }
-        Text("Archivo .xlsx con hojas de resumen, personal, entregas y capacitaciones, filtros de columna y encabezados fijos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Archivo .xlsx con hojas de resumen, personal, entregas, capacitaciones y reingresos, filtros de columna y encabezados fijos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         HorizontalDivider(Modifier.padding(vertical = 6.dp))
-        Text("Ficha individual PDF", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        Text("Ficha individual", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Text("Seleccioná cualquier trabajador de ${empresa.displayName}. También podés generar una ficha con datos incompletos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        WorkerReportMenu(workers, selectedWorkerId, !busy) { selectedWorkerId = it }
+        WorkerReportMenu(workers, selectedWorkerId, !busy && !individualExporter.busy) { selectedWorkerId = it }
         Button(onClick = {
             selectedWorker?.let { worker ->
                 feedback = ""
                 pendingPdf = PendingPdf(worker, source)
                 pdfLauncher.launch("Legajo_${empresa.name}_${worker.id.take(24)}.pdf")
             }
-        }, enabled = !busy && selectedWorker != null, modifier = Modifier.fillMaxWidth()) { Text("Guardar ficha PDF") }
-        Text("Una página con los seis bloques, referencias y hasta tres miniaturas de fotos disponibles. Los valores largos y los históricos extensos se abrevian; Excel conserva los datos completos y los archivos originales se mantienen por separado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }, enabled = !busy && !individualExporter.busy && selectedWorker != null, modifier = Modifier.fillMaxWidth()) { Text("Guardar ficha PDF") }
+        OutlinedButton(onClick = { selectedWorker?.let { individualExporter.export(it, WorkerExportFormat.EXCEL) } }, enabled = !busy && !individualExporter.busy && selectedWorker != null, modifier = Modifier.fillMaxWidth()) { Text("Guardar ficha Excel") }
+        Text("Resumen de los seis bloques, referencias y hasta tres miniaturas. El historial de reingresos agrega un anexo cuando necesita más espacio o contiene observaciones. Los otros históricos se resumen; Excel conserva los datos completos y los archivos originales se mantienen por separado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+        Text("El Excel individual incluye una ficha por bloques, adjuntos y los históricos completos del trabajador seleccionado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = { selectedWorker?.let { individualExporter.export(it, WorkerExportFormat.COMPLETE_PDF) } }, enabled = !busy && !individualExporter.busy && selectedWorker != null, modifier = Modifier.fillMaxWidth()) { Text("PDF completo con documentos") }
+        OutlinedButton(onClick = { selectedWorker?.let { individualExporter.export(it, WorkerExportFormat.PACKAGE) } }, enabled = !busy && !individualExporter.busy && selectedWorker != null, modifier = Modifier.fillMaxWidth()) { Text("ZIP con archivos originales") }
+        if (busy || individualExporter.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (feedback.isNotBlank()) {
             Surface(shape = RoundedCornerShape(14.dp), color = if (hasError) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer) {
                 Text(feedback, Modifier.padding(16.dp), color = if (hasError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer)

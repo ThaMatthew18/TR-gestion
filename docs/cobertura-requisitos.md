@@ -2,12 +2,12 @@
 
 Documento de referencia: **Pliego de Requerimientos Técnicos — Sistema Integral de Gestión de Personal, EPP & Legajos Digitales, especificación V2.0**, de dos páginas, aportado por el usuario. La adaptación agrega dos espacios, **R&R** y **TRANSEO**, con las mismas funciones.
 
-Esta matriz describe la implementación y sus límites. **No constituye un registro de pruebas ejecutadas ni una certificación normativa.** La entrega actual es un frontend Android con estado en memoria y generación local de archivos.
+Esta matriz describe la implementación y sus límites. **No constituye un registro de pruebas ejecutadas ni una certificación normativa.** La entrega actual es una aplicación Android con guardado local persistente y generación local de archivos. Drive requiere completar el registro OAuth descrito en [google-drive.md](google-drive.md).
 
 | Requisito del pliego / solicitud | Pantalla o componente | Implementación y alcance |
 | --- | --- | --- |
 | Pantalla inicial con selección de empresa | Selección de empresa | Tarjetas R&R y TRANSEO; acceso a espacios equivalentes. El botón Cambiar empresa regresa al inicio. |
-| Información completamente separada | Todas las pantallas; `MemoryRepository` | Cada trabajador, entrega, capacitación y adjunto tiene asociación empresarial. El repositorio y las exportaciones verifican la empresa; no se fusionan registros al cambiar de espacio. La separación es de sesión, sin cuentas ni backend. |
+| Información completamente separada | Todas las pantallas; `MemoryRepository` | Cada trabajador, entrega, capacitación y adjunto tiene asociación empresarial. El repositorio y las exportaciones verifican la empresa; no se fusionan registros al cambiar de espacio. La separación se conserva en el almacenamiento privado. La cuenta de Drive se elige dentro de la app; no hay un backend de usuarios o roles. |
 | Regla general: ningún campo obligatorio | Formularios de Personal, Uniformes, EPP y Capacitaciones | Guardado habilitado con campos y adjuntos vacíos. Empresa e identificadores internos se generan automáticamente. Se admite una entrega o capacitación sin trabajador asignado. |
 | 1.1 Código interno, nombres y apellidos | Personal → ficha → bloque 01 | UUID interno y campos libres para nombres y apellidos. Una ficha sin nombre se presenta como Trabajador sin nombre. |
 | 1.1 Cédula y fotos frente/dorso | Personal → bloque 01; Legajos | Número libre y dos espacios de adjuntos. Selección real de imágenes o PDF mediante el selector de documentos Android; apertura de archivos con una aplicación compatible. |
@@ -24,7 +24,9 @@ Esta matriz describe la implementación y sus límites. **No constituye un regis
 | 1.6 Tres tipos de aportación | Personal → bloque 06 | Industria y Comercio Común; Industria y Comercio - No Ley 14.411; Aportación 4: Construcción (Ley 14.411). Selección opcional. |
 | 1.6 Proyecto/obra y número BPS para Aportación 4 | Personal → bloque 06 | Proyecto libre; número de obra BPS visible al seleccionar Construcción o cuando ya existe un valor. No consulta registros del BPS. |
 | 1.6 Categoría, contratación y fechas de alta/baja | Personal → bloque 06 | Puesto/categoría libre; modalidades incluidas A término; selectores de alta y baja. Personal permite filtrar Activos y Con baja. |
-| 2 Exportación consolidada a Excel `.xlsx` | Reportes → Guardar Excel | Archivo OOXML real con hojas Resumen, Personal, Entregas y Capacitaciones; encabezados fijos y filtros de columna. Incluye los seis bloques y referencias a adjuntos; los originales no se incorporan al libro. |
+| Solicitud adicional: varios reingresos | Personal → bloque 06 | Historial de períodos con fecha de reingreso, baja opcional y observaciones, sin borrar al trabajador. Conserva el reingreso único anterior. Indicador Sí/No según el historial y estado según el último período iniciado. Guardado local, Excel individual/consolidado y PDF incluyen el historial. |
+| Solicitud adicional: exportar ficha PDF o Excel | Encabezado de ficha; Personal; Legajos; Reportes | Menú con PDF A4 o Excel individual real de cinco hojas: Ficha, Adjuntos, Entregas, Capacitaciones y Reingresos. Solo contiene el trabajador elegido y sus registros de la misma empresa. Exportar un formulario incluye su edición actual sin guardarla implícitamente en la app. |
+| 2 Exportación consolidada a Excel `.xlsx` | Reportes → Guardar Excel | Archivo OOXML real con hojas Resumen, Personal, Entregas, Capacitaciones y Reingresos; encabezados fijos y filtros de columna. Incluye los seis bloques y referencias a adjuntos; los originales no se incorporan al libro. |
 | 2 Filtros por obra/proyecto, empresa, aportación, indumentaria y capacitación | Reportes | La empresa es el espacio actual. Los otros cuatro filtros son combinables. Indumentaria y estado seleccionan trabajadores y registros coincidentes. Los registros sin trabajador se incluyen cuando los filtros no necesitan esa asociación. No se generan tablas dinámicas de Excel. |
 | 2 Ficha individual de legajo en una página PDF | Personal → opciones; Legajos → descargar; Reportes → ficha PDF | PDF A4 real con datos de los seis bloques y asignación laboral. Resume valores largos, hasta cuatro referencias a documentos, hasta tres miniaturas de imágenes, cinco entregas y cinco capacitaciones; indica información adicional. Los PDF adjuntos y originales permanecen separados. |
 | 3.A Entrega de EPP | EPP | Registro editable de equipo, trabajador, fecha, talle/medida, cantidad y observaciones. Catálogo habitual de casco, lentes/antiparras, guantes, arnés, protección auditiva y calzado; admite texto personalizado. |
@@ -39,10 +41,10 @@ Esta matriz describe la implementación y sus límites. **No constituye un regis
 
 ## Límites transversales
 
-Los datos de demostración y las modificaciones viven en memoria dentro de un `ViewModel`: sobreviven a una rotación, pero no a la terminación del proceso. Los borradores de formularios no sobreviven a la recreación de la pantalla. Las referencias URI de adjuntos se asocian a los registros solo durante la sesión; las imágenes/documentos originales permanecen en su proveedor.
+Los registros se conservan localmente con escritura atómica y se restauran al iniciar. Los adjuntos se copian al almacenamiento privado para conservar su lectura. Los borradores abiertos no sobreviven a una recreación de pantalla. Desinstalar la aplicación o borrar sus datos elimina el almacenamiento local.
 
-La aplicación entregada es **Android 8.0+**, con interfaz adaptable a teléfono y tablet. No se entrega una aplicación web desplegada, base de datos persistente, API, autenticación, roles, sincronización, almacenamiento documental remoto, respaldo o auditoría de usuarios. Esas capacidades corresponden a una etapa posterior. El cambio de empresa y los indicadores locales están disponibles en el frontend actual.
+La aplicación es Android 8.0+ con AMOLED/Claro/Sistema. Drive permite elegir una cuenta por el usuario, autorizar drive.file y actualizar adjuntos por empresa; la autorización real está pendiente del registro OAuth. La sincronización es de la app a Drive, manual o al guardar con la app abierta. No restaura legajos completos ni elimina archivos remotos al quitar registros locales. No se entrega web desplegada, API propia, roles, auditoría de usuarios ni sincronización bidireccional.
 
 ## Verificación
 
-Los comandos están documentados en [README.md](../README.md). La compilación y las 31 pruebas ejecutadas se detallan en [verificacion.md](verificacion.md). La versión 1.1 agrega temas AMOLED, Claro y Sistema con preferencia local persistente.
+Los comandos y los resultados están documentados en [README.md](../README.md) y [verificacion.md](verificacion.md). La versión 1.4 agrega múltiples reingresos y sus exportaciones, conservando AMOLED, Claro y Sistema. La primera página del PDF conserva el resumen del pliego; la solicitud posterior agrega un anexo de reingresos cuando corresponde.

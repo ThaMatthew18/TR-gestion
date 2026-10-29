@@ -19,19 +19,58 @@ data class Attachment(
     val uri: String
 )
 
+data class Reentry(val id: String, val date: String = "", val endDate: String = "", val notes: String = "")
+
 /** All user-editable fields and all attachments are optional. */
 data class Worker(
     val id: String,
     val empresa: Empresa,
     val fields: Map<String, String> = emptyMap(),
-    val attachments: List<Attachment> = emptyList()
+    val attachments: List<Attachment> = emptyList(),
+    val reentries: List<Reentry> = emptyList()
 ) {
+    /** Old single-date records remain readable without modifying their identity or documents. */
+    val reentryHistory: List<Reentry> get() = reentries.ifEmpty {
+        if (fields["tieneReingreso"] == "Sí" || (fields["tieneReingreso"].isNullOrBlank() && !fields["reingreso"].isNullOrBlank()))
+            listOf(Reentry("legacy-$id", fields["reingreso"].orEmpty())) else emptyList()
+    }
+    val hasReentry: Boolean
+        get() = reentryHistory.isNotEmpty()
+    val reentryAnswer: String get() = if (hasReentry) "Sí" else "No"
+    val reentryDateText: String get() = reentryHistory.filter { parseDate(it.date) != null }.maxByOrNull { it.date }?.date.orEmpty()
+
+    fun withReentries(history: List<Reentry>): Worker = copy(
+        fields = workerFieldsForSave(fields - "reingreso" + ("tieneReingreso" to if (history.isEmpty()) "No" else "Sí")),
+        reentries = history.toList()
+    )
+
+    fun employmentDates(today: LocalDate = LocalDate.now()): Pair<String, String> {
+        val lastEnd = fields["baja"].orEmpty()
+        val end = parseDate(lastEnd)
+        val latest = reentryHistory.mapIndexedNotNull { index, entry ->
+            val start = parseDate(entry.date) ?: return@mapIndexedNotNull null
+            if (start.isAfter(today) || (end != null && !start.isAfter(end))) null else Triple(start, index, entry)
+        }.sortedWith(compareBy<Triple<LocalDate, Int, Reentry>> { it.first }.thenBy { it.second }).lastOrNull()?.third
+        return if (latest != null) latest.date to latest.endDate else fields["alta"].orEmpty() to lastEnd
+    }
+
+    fun isActive(today: LocalDate = LocalDate.now()): Boolean {
+        val end = employmentDates(today).second
+        return end.isBlank() || parseDate(end)?.isAfter(today) == true
+    }
+
     val displayName: String
         get() = listOf(fields["nombres"].orEmpty(), fields["apellidos"].orEmpty())
             .map(String::trim)
             .filter(String::isNotEmpty)
             .joinToString(" ")
             .ifBlank { "Trabajador sin nombre" }
+}
+
+fun workerFieldsForSave(fields: Map<String, String>): Map<String, String> = fields.filterValues { it.isNotBlank() }.toMutableMap().apply {
+    val enabled = this["tieneReingreso"] == "Sí" || (this["tieneReingreso"].isNullOrBlank() && !this["reingreso"].isNullOrBlank())
+    this["tieneReingreso"] = if (enabled) "Sí" else "No"
+    if (!enabled) remove("reingreso")
 }
 
 data class Delivery(
@@ -46,8 +85,20 @@ data class Delivery(
     val conformity: Boolean = false,
     val notes: String = "",
     val receiptName: String = "",
-    val receiptUri: String = ""
+    val receiptUri: String = "",
+    val signature: ReceiptSignature? = null
 )
+
+data class InkPoint(val x: Float, val y: Float)
+data class ReceiptSignature(val name: String, val document: String, val signedAt: String, val payloadHash: String, val strokes: List<List<InkPoint>>)
+
+fun Delivery.signingHash(): String {
+    val payload = listOf(id, empresa.name, workerId, kind.name, item, size, date, quantity, notes, conformity.toString()).joinToString("") { "${it.length}:$it" }
+    return java.security.MessageDigest.getInstance("SHA-256").digest(payload.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+}
+
+fun ReceiptSignature.hasInk(): Boolean = strokes.all { stroke -> stroke.all { it.x.isFinite() && it.y.isFinite() && it.x in 0f..1f && it.y in 0f..1f } } && strokes.any { stroke -> stroke.size > 1 && stroke.zipWithNext().sumOf { (a, b) -> kotlin.math.hypot((a.x - b.x).toDouble(), (a.y - b.y).toDouble()) } > 0.01 }
+fun Delivery.validSignature(): ReceiptSignature? = signature?.takeIf { it.payloadHash == signingHash() && it.hasInk() }
 
 enum class TrainingStatus { VIGENTE, POR_VENCER, VENCIDA, SIN_FECHA, PROGRAMADA }
 

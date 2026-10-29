@@ -1,21 +1,39 @@
 package uy.gestionpersonal.data
 
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import java.time.LocalDate
 
 /**
- * Session-only repository. State changes trigger Compose recomposition.
+ * Observable repository. Production persists snapshots through onChanged; tests can use memory only.
  * Company keys are mandatory and never inferred from the currently visible screen.
  * Replacing this repository with persistent storage must preserve the same checks.
  */
-class MemoryRepository(seedDemoData: Boolean = true) {
+class MemoryRepository(
+    seedDemoData: Boolean = true,
+    initialData: Map<Empresa, CompanyData>? = null,
+    private val onChanged: (Map<Empresa, CompanyData>) -> Unit = {}
+) {
+    private var ready = false
+    var persistenceError by mutableStateOf<String?>(null)
+        private set
     private val companies = mutableStateMapOf(
         Empresa.RR to CompanyData(),
         Empresa.TRANSEO to CompanyData()
     )
 
     init {
-        if (seedDemoData) seedDemo()
+        if (initialData != null) {
+            initialData.forEach { (company, data) ->
+                require(data.workers.all { it.empresa == company } && data.deliveries.all { it.empresa == company } && data.trainings.all { it.empresa == company })
+                data.workers.forEach(::saveWorker)
+            }
+            initialData.values.forEach { data -> data.deliveries.forEach(::saveDelivery); data.trainings.forEach(::saveTraining) }
+        } else if (seedDemoData) seedDemo()
+        ready = true
+        persist()
     }
 
     fun data(empresa: Empresa): CompanyData = companies.getValue(empresa)
@@ -29,8 +47,9 @@ class MemoryRepository(seedDemoData: Boolean = true) {
             }
         }) { "El documento pertenece a otra empresa y no puede cambiarse de espacio de trabajo." }
         val current = data(worker.empresa)
-        val snapshot = worker.copy(fields = worker.fields.toMap(), attachments = worker.attachments.toList())
+        val snapshot = worker.copy(fields = worker.fields.toMap(), attachments = worker.attachments.toList(), reentries = worker.reentries.toList())
         companies[worker.empresa] = current.copy(workers = current.workers.upsert(snapshot, Worker::id))
+        persist()
     }
 
     /** Deleting a worker also deletes their own associated records in this company. */
@@ -42,18 +61,23 @@ class MemoryRepository(seedDemoData: Boolean = true) {
             deliveries = current.deliveries.filterNot { it.workerId == id },
             trainings = current.trainings.filterNot { it.workerId == id }
         )
+        persist()
     }
 
     fun saveDelivery(delivery: Delivery) {
         checkCompany(delivery.id, delivery.empresa) { it.deliveries.map { record -> record.id } }
         checkWorkerReference(delivery.empresa, delivery.workerId)
         val current = data(delivery.empresa)
-        companies[delivery.empresa] = current.copy(deliveries = current.deliveries.upsert(delivery, Delivery::id))
+        val valid = delivery.validSignature()
+        val snapshot = delivery.copy(signature = valid, conformity = delivery.conformity && (delivery.signature == null || valid != null))
+        companies[delivery.empresa] = current.copy(deliveries = current.deliveries.upsert(snapshot, Delivery::id))
+        persist()
     }
 
     fun deleteDelivery(empresa: Empresa, id: String) {
         val current = data(empresa)
         companies[empresa] = current.copy(deliveries = current.deliveries.filterNot { it.id == id })
+        persist()
     }
 
     fun saveTraining(training: Training) {
@@ -61,11 +85,31 @@ class MemoryRepository(seedDemoData: Boolean = true) {
         checkWorkerReference(training.empresa, training.workerId)
         val current = data(training.empresa)
         companies[training.empresa] = current.copy(trainings = current.trainings.upsert(training, Training::id))
+        persist()
     }
 
     fun deleteTraining(empresa: Empresa, id: String) {
         val current = data(empresa)
         companies[empresa] = current.copy(trainings = current.trainings.filterNot { it.id == id })
+        persist()
+    }
+
+    fun snapshot(): Map<Empresa, CompanyData> = Empresa.entries.associateWith(::data)
+
+    /** Persist before replacing observable state. A concurrent local edit aborts restoration. */
+    fun replaceCompany(company: Empresa, expected: CompanyData, replacement: CompanyData) {
+        check(data(company) == expected) { "Los datos cambiaron durante la descarga. Volvé a intentarlo para conservar la edición local." }
+        val candidate = snapshot() + (company to replacement)
+        MemoryRepository(seedDemoData = false, initialData = candidate)
+        onChanged(candidate)
+        companies[company] = replacement
+        persistenceError = null
+    }
+
+    private fun persist() {
+        if (!ready) return
+        try { onChanged(snapshot()); persistenceError = null }
+        catch (_: Exception) { persistenceError = "No se pudieron guardar los cambios en el dispositivo. Liberá espacio y volvé a guardar; no cierres la aplicación hasta resolverlo." }
     }
 
     private fun checkCompany(id: String, empresa: Empresa, ids: (CompanyData) -> List<String>) {

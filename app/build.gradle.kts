@@ -9,8 +9,8 @@ android {
         applicationId = "uy.gestionpersonal"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1-demo"
+        versionCode = 7
+        versionName = "1.6-ficha-general"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -28,6 +28,8 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
+    implementation("com.google.android.gms:play-services-auth:22.0.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.04.01"))

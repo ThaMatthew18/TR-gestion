@@ -247,4 +247,23 @@ class MemoryRepositoryTest {
         assertEquals("cedula_frente", repository.data(Empresa.RR).workers.first().attachments.single().kind)
         assertEquals("carne_frente", repository.data(Empresa.TRANSEO).workers.single().attachments.single().kind)
     }
+
+    @Test fun persistentSnapshotsRestoreAllCompanyRecords() {
+        var snapshot: Map<Empresa, CompanyData>? = null
+        val original = MemoryRepository(onChanged = { snapshot = it })
+        original.saveWorker(Worker("persisted", Empresa.RR, mapOf("nombres" to "Nuevo")))
+        val restored = MemoryRepository(seedDemoData = false, initialData = snapshot)
+        assertEquals(original.snapshot(), restored.snapshot())
+    }
+
+    @Test fun storageFailureIsVisibleAndNeverSilentlyClearsTheRecords() {
+        var writable = false
+        val repository = MemoryRepository(seedDemoData = false, onChanged = { if (!writable) throw java.io.IOException("Disco lleno") })
+        repository.saveWorker(Worker("pending", Empresa.RR))
+        assertNotNull(repository.persistenceError)
+        assertEquals("pending", repository.data(Empresa.RR).workers.single().id)
+        writable = true
+        repository.saveWorker(repository.data(Empresa.RR).workers.single())
+        assertNull(repository.persistenceError)
+    }
 }

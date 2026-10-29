@@ -55,7 +55,7 @@ class ReportExportInstrumentedTest {
             "aportacion" to "Aportación 4: Construcción (Ley 14.411)",
             "proyecto" to "Construcción y acondicionamiento del complejo administrativo Centro Sur — Etapa 2",
             "obraBps" to "123456789", "categoria" to "Oficial especializada en mantenimiento", "modalidad" to "A término hasta finalización de obra",
-            "alta" to "2026-02-10", "baja" to ""
+            "alta" to "2026-02-10", "baja" to "2026-07-01", "tieneReingreso" to "Sí", "reingreso" to "2026-08-15"
         ), (1..6).map { index -> Attachment("a$index", if (index < 3) "Cédula · Foto $index" else "Legajo", "Documento de demostración número $index.png", if (index < 3) Uri.fromFile(image).toString() else "") })
         val foreign = Worker("TR-001", Empresa.TRANSEO, mapOf("nombres" to "TRANSEO_ONLY_RECORD", "proyecto" to "Proyecto Norte"))
         val deliveries = (1..8).map { index -> Delivery("d$index", Empresa.RR, worker.id, if (index % 2 == 0) DeliveryKind.EPP else DeliveryKind.UNIFORME,
@@ -73,6 +73,8 @@ class ReportExportInstrumentedTest {
         }
         val rr = File(directory, "personal-rr.xlsx")
         val transeo = File(directory, "personal-transeo.xlsx")
+        val individual = File(directory, "ficha-rr.xlsx")
+        individual.outputStream().use { writeWorkerExcel(it, worker, source) }
         rr.outputStream().use { writeCompanyExcel(it, Empresa.RR, source, today = LocalDate.of(2026, 10, 23)) }
         transeo.outputStream().use { writeCompanyExcel(it, Empresa.TRANSEO, source, today = LocalDate.of(2026, 10, 23)) }
         fun xml(file: File): String = ZipFile(file).use { zip -> zip.entries().asSequence().joinToString("\n") { entry -> zip.getInputStream(entry).bufferedReader().use { it.readText() } } }
@@ -87,5 +89,23 @@ class ReportExportInstrumentedTest {
         val blankPdf = File(directory, "ficha-rr-vacia.pdf")
         blankPdf.outputStream().use { exportWorkerPdf(context, it, Worker("SIN-DATOS", Empresa.RR), source) }
         ParcelFileDescriptor.open(blankPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor -> PdfRenderer(descriptor).use { assertEquals(1, it.pageCount) } }
+    }
+
+    @Test fun longHistoryExportsEveryPeriodAndAllNotesAcrossPdfPagesAndExcelRows() {
+        val directory = File(context.filesDir, "qa").apply { mkdirs() }
+        val entries = (1..40).map { index -> Reentry("r$index", "2026-01-${((index - 1) % 28 + 1).toString().padStart(2, '0')}", "2026-02-01", "Período $index: " + "Observación completa del historial laboral. ".repeat(7) + "FIN_$index") }
+        val worker = Worker("HISTORY", Empresa.RR, mapOf("nombres" to "Ana", "apellidos" to "Pérez"), reentries = entries)
+        val source = CompanyData(listOf(worker))
+        val pdf = File(directory, "ficha-historial.pdf")
+        pdf.outputStream().use { exportWorkerPdf(context, it, worker, source) }
+        ParcelFileDescriptor.open(pdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+            PdfRenderer(descriptor).use { assertTrue(it.pageCount > 2) }
+        }
+        val excel = File(directory, "ficha-historial.xlsx")
+        excel.outputStream().use { writeWorkerExcel(it, worker, source) }
+        ZipFile(excel).use { zip ->
+            val history = zip.getInputStream(zip.getEntry("xl/worksheets/sheet5.xml")).bufferedReader().readText()
+            entries.forEach { assertTrue(history.contains(it.notes)) }
+        }
     }
 }

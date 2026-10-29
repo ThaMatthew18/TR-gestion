@@ -37,11 +37,18 @@ import uy.gestionpersonal.data.Empresa
 import uy.gestionpersonal.data.MemoryRepository
 import uy.gestionpersonal.data.UruguayGeography
 import uy.gestionpersonal.data.Worker
+import uy.gestionpersonal.data.Reentry
 import uy.gestionpersonal.data.newId
-import uy.gestionpersonal.reports.exportWorkerPdf
+import uy.gestionpersonal.data.importDocument
+import uy.gestionpersonal.reports.*
+import uy.gestionpersonal.data.workerFieldsForSave
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun PersonalScreen(empresa: Empresa, repository: MemoryRepository) {
@@ -50,7 +57,7 @@ fun PersonalScreen(empresa: Empresa, repository: MemoryRepository) {
     var status by remember(empresa) { mutableStateOf("Todos") }
     var editor by remember(empresa) { mutableStateOf<Worker?>(null) }
     var deleting by remember(empresa) { mutableStateOf<Worker?>(null) }
-    val exportPdf = rememberWorkerPdfExport(empresa, repository)
+    val exporter = rememberWorkerExporter(empresa, repository)
     val query = search.trim()
     val visible = workers.filter {
         val active = isWorkerActive(it)
@@ -91,13 +98,13 @@ fun PersonalScreen(empresa: Empresa, repository: MemoryRepository) {
             item { WorkersEmptyState(if (workers.isEmpty()) "Tu equipo empieza acá" else "No encontramos coincidencias", if (workers.isEmpty()) "Agregá un trabajador. Todos los campos son opcionales." else "Probá con otra búsqueda o cambiá el filtro.") }
         } else {
             items(visible, key = { it.id }) { worker ->
-                WorkerCard(worker, onEdit = { editor = worker }, onDelete = { deleting = worker }, onPdf = { exportPdf(worker) })
+                WorkerCard(worker, onEdit = { editor = worker }, onDelete = { deleting = worker }, onPdf = { exporter.export(worker, WorkerExportFormat.PDF) }, onExcel = { exporter.export(worker, WorkerExportFormat.EXCEL) })
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
     }
     editor?.let { worker ->
-        WorkerEditorDialog(worker, onDismiss = { editor = null }, onSave = { repository.saveWorker(it); editor = null })
+        WorkerEditorDialog(worker, repository, onDismiss = { editor = null }, onSave = { repository.saveWorker(it); editor = null })
     }
     deleting?.let { worker ->
         AlertDialog(
@@ -111,7 +118,7 @@ fun PersonalScreen(empresa: Empresa, repository: MemoryRepository) {
 }
 
 @Composable
-private fun WorkerCard(worker: Worker, onEdit: () -> Unit, onDelete: () -> Unit, onPdf: () -> Unit) {
+private fun WorkerCard(worker: Worker, onEdit: () -> Unit, onDelete: () -> Unit, onPdf: () -> Unit, onExcel: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -127,6 +134,7 @@ private fun WorkerCard(worker: Worker, onEdit: () -> Unit, onDelete: () -> Unit,
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text("Editar ficha") }, leadingIcon = { Icon(Icons.Outlined.Edit, null) }, onClick = { menu = false; onEdit() })
                         DropdownMenuItem(text = { Text("Descargar ficha PDF") }, leadingIcon = { Icon(Icons.Outlined.Download, null) }, onClick = { menu = false; onPdf() })
+                        DropdownMenuItem(text = { Text("Descargar ficha Excel") }, leadingIcon = { Icon(Icons.Outlined.TableChart, null) }, onClick = { menu = false; onExcel() })
                         DropdownMenuItem(text = { Text("Eliminar trabajador", color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Outlined.DeleteOutline, null, tint = MaterialTheme.colorScheme.error) }, onClick = { menu = false; onDelete() })
                     }
                 }
@@ -166,7 +174,7 @@ fun LegajosScreen(empresa: Empresa, repository: MemoryRepository) {
     var search by remember(empresa) { mutableStateOf("") }
     var selectedId by remember(empresa) { mutableStateOf("") }
     var editor by remember(empresa) { mutableStateOf<Worker?>(null) }
-    val exportPdf = rememberWorkerPdfExport(empresa, repository)
+    val exporter = rememberWorkerExporter(empresa, repository)
     val query = search.trim()
     val visible = workers.filter { (selectedId.isBlank() || it.id == selectedId) && (query.isBlank() || it.displayName.contains(query, true) || it.fields["cedula"].orEmpty().contains(query, true) || it.attachments.any { file -> file.name.contains(query, true) }) }
     val documentCount = workers.sumOf { it.attachments.size }
@@ -199,7 +207,16 @@ fun LegajosScreen(empresa: Empresa, repository: MemoryRepository) {
                             Text(worker.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                             Text(worker.fields["cedula"].orEmpty().ifBlank { "Cédula sin completar" }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        IconButton(onClick = { exportPdf(worker) }) { Icon(Icons.Outlined.Download, "Descargar ficha de ${worker.displayName} en PDF", tint = MaterialTheme.colorScheme.primary) }
+                        Box {
+                            var exportMenu by remember { mutableStateOf(false) }
+                            IconButton(onClick = { exportMenu = true }) { Icon(Icons.Outlined.Download, "Exportar ficha de ${worker.displayName}", tint = MaterialTheme.colorScheme.primary) }
+                            DropdownMenu(exportMenu, { exportMenu = false }) {
+                                DropdownMenuItem(text = { Text("Exportar ficha PDF") }, onClick = { exportMenu = false; exporter.export(worker, WorkerExportFormat.PDF) })
+                                DropdownMenuItem(text = { Text("Exportar ficha Excel") }, onClick = { exportMenu = false; exporter.export(worker, WorkerExportFormat.EXCEL) })
+                                DropdownMenuItem(text = { Text("PDF completo con documentos") }, onClick = { exportMenu = false; exporter.export(worker, WorkerExportFormat.COMPLETE_PDF) })
+                                DropdownMenuItem(text = { Text("ZIP con archivos originales") }, onClick = { exportMenu = false; exporter.export(worker, WorkerExportFormat.PACKAGE) })
+                            }
+                        }
                         IconButton(onClick = { editor = worker }) { Icon(Icons.Outlined.Edit, "Editar documentos de ${worker.displayName}", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -228,30 +245,39 @@ fun LegajosScreen(empresa: Empresa, repository: MemoryRepository) {
             }
         }
     }
-    editor?.let { worker -> WorkerEditorDialog(worker, onDismiss = { editor = null }, onSave = { repository.saveWorker(it); editor = null }) }
+    editor?.let { worker -> WorkerEditorDialog(worker, repository, onDismiss = { editor = null }, onSave = { repository.saveWorker(it); editor = null }) }
 }
 
 private data class WorkerFieldSpec(val key: String, val label: String, val date: Boolean = false, val options: List<String>? = null, val keyboard: KeyboardType = KeyboardType.Text)
 
 @Composable
-private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (Worker) -> Unit) {
+private fun WorkerEditorDialog(worker: Worker, repository: MemoryRepository, onDismiss: () -> Unit, onSave: (Worker) -> Unit) {
     val context = LocalContext.current
     val fields = remember(worker.id) { mutableStateMapOf<String, String>().apply { putAll(worker.fields) } }
     val attachments = remember(worker.id) { mutableStateListOf<Attachment>().apply { addAll(worker.attachments) } }
+    val reentries = remember(worker.id) { mutableStateListOf<Reentry>().apply { addAll(worker.reentryHistory) } }
+    var removingReentry by remember { mutableStateOf<Reentry?>(null) }
     var pendingKind by remember { mutableStateOf("") }
+    var importing by remember { mutableStateOf(false) }
+    val importScope = rememberCoroutineScope()
     var discardConfirmation by remember { mutableStateOf(false) }
-    val changed = fields.toMap().filterValues { it.isNotBlank() } != worker.fields.filterValues { it.isNotBlank() } || attachments.toList() != worker.attachments
+    val exporter = rememberWorkerExporter(worker.empresa, repository)
+    var exportMenu by remember { mutableStateOf(false) }
+    fun draftWorker() = worker.copy(fields = fields.toMap(), attachments = attachments.toList()).withReentries(reentries.toList())
+    val changed = fields.toMap().filterValues { it.isNotBlank() } != worker.fields.filterValues { it.isNotBlank() } || attachments.toList() != worker.attachments || reentries.toList() != worker.reentryHistory
     val dismiss = { if (changed) discardConfirmation = true else onDismiss() }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null && pendingKind.isNotBlank()) {
-            runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-            val name = runCatching {
-                context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)) else null
-                }
-            }.getOrNull() ?: uri.lastPathSegment ?: "Documento"
-            attachments.removeAll { it.kind == pendingKind }
-            attachments.add(Attachment(id = newId(), kind = pendingKind, name = name, uri = uri.toString()))
+            val kind = pendingKind
+            importScope.launch {
+                importing = true
+                try {
+                    val document = withContext(Dispatchers.IO) { importDocument(context, uri) }
+                    attachments.removeAll { it.kind == kind }
+                    attachments.add(Attachment(id = newId(), kind = kind, name = document.name, uri = document.uri))
+                } catch (failure: Exception) { if (failure is CancellationException) throw failure; Toast.makeText(context, "No se pudo guardar el documento. Verificá el archivo y el espacio disponible.", Toast.LENGTH_LONG).show() }
+                finally { importing = false }
+            }
         }
     }
     val department = fields["departamento"].orEmpty()
@@ -265,6 +291,15 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
                         Text(if (worker.fields.isEmpty() && worker.attachments.isEmpty()) "Ficha de trabajador" else worker.displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Text("${worker.empresa.displayName} · Todos los campos son opcionales", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    Box {
+                        IconButton(onClick = { exportMenu = true }, enabled = !importing && !exporter.busy) { Icon(Icons.Outlined.Download, "Exportar ficha") }
+                        DropdownMenu(exportMenu, { exportMenu = false }) {
+                            DropdownMenuItem(text = { Text("Exportar ficha PDF") }, onClick = { exportMenu = false; exporter.export(draftWorker(), WorkerExportFormat.PDF) })
+                            DropdownMenuItem(text = { Text("Exportar ficha Excel") }, onClick = { exportMenu = false; exporter.export(draftWorker(), WorkerExportFormat.EXCEL) })
+                            DropdownMenuItem(text = { Text("PDF completo con documentos") }, onClick = { exportMenu = false; exporter.export(draftWorker(), WorkerExportFormat.COMPLETE_PDF) })
+                            DropdownMenuItem(text = { Text("ZIP con archivos originales") }, onClick = { exportMenu = false; exporter.export(draftWorker(), WorkerExportFormat.PACKAGE) })
+                        }
+                    }
                     IconButton(onClick = dismiss) { Icon(Icons.Outlined.Close, "Cerrar ficha") }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -277,7 +312,7 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
                             WorkerFieldSpec("paisNacimiento", "País de nacimiento"), WorkerFieldSpec("paisDocumento", "País del documento"),
                             WorkerFieldSpec("carneSaludVencimiento", "Vencimiento del carné de salud", date = true)
                         ), fields)
-                        WorkerAttachmentGrid(attachments, onChoose = { pendingKind = it; picker.launch(arrayOf("image/*", "application/pdf")) }, onRemove = { kind -> attachments.removeAll { it.kind == kind } })
+                        WorkerAttachmentGrid(attachments, onChoose = { pendingKind = it; picker.launch(arrayOf("image/*", "application/pdf")) }, onRemove = { kind -> attachments.removeAll { it.kind == kind } }, enabled = !importing)
                     }
                     WorkerFormSection("02", "Contacto y dirección", "Departamento y localidades del nomenclátor oficial del INE") {
                         WorkerFieldGrid(listOf(
@@ -303,16 +338,40 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
                             add(WorkerFieldSpec("proyecto", "Proyecto / nombre de obra"))
                             if (fields["aportacion"].orEmpty().contains("Construcción") || !fields["obraBps"].isNullOrBlank()) add(WorkerFieldSpec("obraBps", "Número de obra BPS"))
                             add(WorkerFieldSpec("categoria", "Categoría / puesto")); add(WorkerFieldSpec("modalidad", "Modalidad de contratación", options = listOf("A término", "Por tiempo indeterminado", "Por obra", "Jornalero", "Otra")))
-                            add(WorkerFieldSpec("alta", "Fecha de alta", date = true)); add(WorkerFieldSpec("baja", "Fecha de baja", date = true))
+                            add(WorkerFieldSpec("alta", "Fecha de alta inicial", date = true)); add(WorkerFieldSpec("baja", "Fecha de baja inicial", date = true))
                         }, fields)
+                        Text("Historial de reingresos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(if (reentries.isEmpty()) "Tiene reingresos: No" else "Tiene reingresos: Sí · ${reentries.size} registro(s)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Conservá la ficha y agregá un período cada vez que vuelva. Para una nueva baja, completá la fecha en el reingreso correspondiente.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        reentries.forEachIndexed { index, entry ->
+                            key(entry.id) {
+                                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp)) {
+                                    Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text("Reingreso ${index + 1}", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                                            IconButton(onClick = { removingReentry = entry }) { Icon(Icons.Outlined.DeleteOutline, "Quitar reingreso ${index + 1}") }
+                                        }
+                                        fun update(updated: Reentry) { val position = reentries.indexOfFirst { it.id == entry.id }; if (position >= 0) reentries[position] = updated }
+                                        WorkerDateField(entry.date, { update(entry.copy(date = it)) }, "Fecha de reingreso ${index + 1}", Modifier.fillMaxWidth())
+                                        WorkerDateField(entry.endDate, { update(entry.copy(endDate = it)) }, "Fecha de baja del reingreso ${index + 1}", Modifier.fillMaxWidth())
+                                        OutlinedTextField(entry.notes, { update(entry.copy(notes = it)) }, label = { Text("Observaciones del reingreso ${index + 1}") }, modifier = Modifier.fillMaxWidth(), minLines = 2, shape = RoundedCornerShape(10.dp))
+                                    }
+                                }
+                            }
+                        }
+                        OutlinedButton(onClick = { reentries.add(Reentry(newId())) }, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp)); Text("Agregar reingreso")
+                        }
                     }
+                    Text("Exportar genera un archivo con los datos actuales de la ficha. Tocá Guardar trabajador para conservar los cambios en la aplicación.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                if (importing || exporter.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = dismiss) { Text("Cancelar") }
                     Spacer(Modifier.width(10.dp))
-                    Button(onClick = { onSave(worker.copy(fields = fields.toMap().filterValues { it.isNotBlank() }, attachments = attachments.toList())) }, shape = RoundedCornerShape(10.dp)) {
+                    Button(onClick = { onSave(draftWorker()) }, enabled = !importing, shape = RoundedCornerShape(10.dp)) {
                         Icon(Icons.Outlined.Check, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)); Text("Guardar trabajador")
                     }
                 }
@@ -323,6 +382,12 @@ private fun WorkerEditorDialog(worker: Worker, onDismiss: () -> Unit, onSave: (W
         onDismissRequest = { discardConfirmation = false }, title = { Text("¿Descartar los cambios?") }, text = { Text("Los cambios de esta ficha todavía no se guardaron.") },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Descartar") } }, dismissButton = { TextButton(onClick = { discardConfirmation = false }) { Text("Seguir editando") } }
     )
+    removingReentry?.let { entry -> AlertDialog(
+        onDismissRequest = { removingReentry = null }, title = { Text("¿Quitar este reingreso?") },
+        text = { Text("Se quitará únicamente este período al guardar la ficha. El trabajador y sus demás registros se conservan.") },
+        confirmButton = { TextButton(onClick = { reentries.removeAll { it.id == entry.id }; removingReentry = null }) { Text("Quitar reingreso") } },
+        dismissButton = { TextButton(onClick = { removingReentry = null }) { Text("Cancelar") } }
+    ) }
 }
 
 @Composable
@@ -353,16 +418,17 @@ private fun WorkerFieldGrid(specs: List<WorkerFieldSpec>, fields: MutableMap<Str
 
 @Composable
 private fun WorkerFormField(spec: WorkerFieldSpec, fields: MutableMap<String, String>, modifier: Modifier) {
-    val value = fields[spec.key].orEmpty()
+    val value = if (spec.key == "tieneReingreso") fields[spec.key].orEmpty().ifBlank { if (!fields["reingreso"].isNullOrBlank()) "Sí" else "No" } else fields[spec.key].orEmpty()
     val update: (String) -> Unit = { selected ->
         fields[spec.key] = selected
         if (spec.key == "departamento" && selected != value) fields.remove("localidad")
+        if (spec.key == "tieneReingreso" && selected != "Sí") fields.remove("reingreso")
     }
     when {
         spec.date -> WorkerDateField(value, update, spec.label, modifier)
         spec.options != null -> WorkerSelectDropdown(
             value, spec.label, spec.options.map { it to it }, update, modifier,
-            enabled = spec.key != "localidad" || !fields["departamento"].isNullOrBlank()
+            enabled = spec.key != "localidad" || !fields["departamento"].isNullOrBlank(), allowClear = spec.key != "tieneReingreso"
         )
         else -> OutlinedTextField(value = value, onValueChange = update, label = { Text(spec.label) }, modifier = modifier, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = spec.keyboard), shape = RoundedCornerShape(10.dp))
     }
@@ -402,7 +468,7 @@ private fun WorkerDateField(value: String, onChange: (String) -> Unit, label: St
 }
 
 @Composable
-private fun WorkerAttachmentGrid(attachments: List<Attachment>, onChoose: (String) -> Unit, onRemove: (String) -> Unit) {
+private fun WorkerAttachmentGrid(attachments: List<Attachment>, onChoose: (String) -> Unit, onRemove: (String) -> Unit, enabled: Boolean = true) {
     val context = LocalContext.current
     val kinds = listOf("cedula_frente", "cedula_dorso", "carne_frente", "carne_dorso")
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -419,31 +485,13 @@ private fun WorkerAttachmentGrid(attachments: List<Attachment>, onChoose: (Strin
                             if (file != null && !file.uri.startsWith("content://")) Text("Ejemplo · sin archivo vinculado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
                         }
                         if (file != null && file.uri.startsWith("content://")) IconButton(onClick = { openWorkerAttachment(context, file) }) { Icon(Icons.Outlined.OpenInNew, "Abrir ${file.name}", Modifier.size(18.dp)) }
-                        if (file != null) IconButton(onClick = { onRemove(kind) }, modifier = Modifier.size(36.dp)) { Icon(Icons.Outlined.Close, "Quitar ${attachmentTitle(kind)}", Modifier.size(18.dp)) }
+                        if (file != null) IconButton(onClick = { onRemove(kind) }, enabled = enabled, modifier = Modifier.size(36.dp)) { Icon(Icons.Outlined.Close, "Quitar ${attachmentTitle(kind)}", Modifier.size(18.dp)) }
                     }
-                    TextButton(onClick = { onChoose(kind) }, modifier = Modifier.align(Alignment.End), contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (file == null) "Adjuntar archivo" else "Cambiar archivo") }
+                    TextButton(onClick = { onChoose(kind) }, enabled = enabled, modifier = Modifier.align(Alignment.End), contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (file == null) "Adjuntar archivo" else "Cambiar archivo") }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun rememberWorkerPdfExport(empresa: Empresa, repository: MemoryRepository): (Worker) -> Unit {
-    val context = LocalContext.current
-    var pending by remember(empresa) { mutableStateOf<Worker?>(null) }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
-        val worker = pending
-        if (uri != null && worker != null) {
-            runCatching {
-                val output = context.contentResolver.openOutputStream(uri) ?: error("No se pudo abrir el archivo")
-                output.use { exportWorkerPdf(context, it, worker, repository.data(worker.empresa)) }
-            }.onSuccess { Toast.makeText(context, "Ficha PDF guardada", Toast.LENGTH_LONG).show() }
-                .onFailure { Toast.makeText(context, "No se pudo guardar la ficha PDF: ${it.localizedMessage}", Toast.LENGTH_LONG).show() }
-        }
-        pending = null
-    }
-    return { worker -> pending = worker; launcher.launch("Ficha_${worker.empresa.name}_${worker.displayName.replace(Regex("[^\\p{L}\\p{N}_-]"), "_")}.pdf") }
 }
 
 private fun openWorkerAttachment(context: android.content.Context, file: Attachment) {
@@ -467,10 +515,7 @@ private fun attachmentTitle(kind: String) = when (kind) {
     else -> kind.replace('_', ' ').replaceFirstChar { it.uppercase() }
 }
 
-private fun isWorkerActive(worker: Worker): Boolean {
-    val date = worker.fields["baja"].orEmpty()
-    return date.isBlank() || runCatching { LocalDate.parse(date).isAfter(LocalDate.now()) }.getOrDefault(false)
-}
+private fun isWorkerActive(worker: Worker): Boolean = worker.isActive()
 
 @Composable
 private fun WorkerPageHeading(title: String, description: String, action: String? = null, onAction: () -> Unit = {}) {
