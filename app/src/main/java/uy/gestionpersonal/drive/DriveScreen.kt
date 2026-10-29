@@ -23,6 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.google.android.gms.common.AccountPicker
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import uy.gestionpersonal.data.*
 import uy.gestionpersonal.ui.ScreenHeading
 
@@ -71,6 +72,19 @@ fun DriveScreen(empresa: Empresa, repository: MemoryRepository, controller: Driv
     val source = repository.data(empresa)
     val documents = remember(empresa, source) { driveDocuments(empresa, source) }
     var confirmDisconnect by remember { mutableStateOf(false) }
+    var downloading by remember(empresa) { mutableStateOf<WorkspaceRevision?>(null) }
+    var publishing by remember(empresa) { mutableStateOf(false) }
+    var resolving by remember(empresa) { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var recoveryMessage by remember { mutableStateOf("") }
+    var pendingRecovery by remember { mutableStateOf<String?>(null) }
+    val recoveryExport = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { destination ->
+        val sourceUri = pendingRecovery; pendingRecovery = null
+        if (destination != null && sourceUri != null) scope.launch {
+            try { withContext(Dispatchers.IO) { val input = context.contentResolver.openInputStream(Uri.parse(sourceUri)) ?: error("No se pudo leer el respaldo"); input.use { from -> val output = context.contentResolver.openOutputStream(destination, "w") ?: error("No se pudo abrir el destino"); output.use { from.copyTo(it) } } }; recoveryMessage = "Respaldo previo exportado" }
+            catch (failure: Exception) { if (failure is CancellationException) throw failure; recoveryMessage = "No se pudo exportar el respaldo: ${failure.localizedMessage}" }
+        }
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         ScreenHeading("Google Drive", "Documentos de ${empresa.displayName} en la cuenta que elijas.")
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
@@ -114,7 +128,26 @@ fun DriveScreen(empresa: Empresa, repository: MemoryRepository, controller: Driv
             Text(controller.message, Modifier.padding(16.dp), color = if (controller.error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer)
         }
         Text("Los archivos y registros se conservan en este dispositivo. Si falla la conexión, reintentá desde acá. Las actualizaciones van de la aplicación a Drive; la edición de un archivo desde Drive no modifica el legajo local. Los adjuntos que quites de la app seguirán en Drive hasta que los elimines allí.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        HorizontalDivider()
+        Text("Datos completos entre celulares", style = MaterialTheme.typography.titleLarge)
+        Text("Publicá una copia de ${empresa.displayName} y descargala en otro celular con esta misma cuenta de Google. Incluye fichas, reingresos, entregas, firmas, capacitaciones y documentos. Es una operación manual; las ediciones no se combinan automáticamente.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = { controller.refreshWorkspace(empresa) }, enabled = controller.authorized && !controller.busy && !controller.connecting) { Text("Consultar versiones compartidas") }
+        val versions = controller.workspaceVersions[empresa].orEmpty()
+        val heads = remember(versions) { runCatching { workspaceHeads(versions) }.getOrDefault(emptyList()) }
+        if (heads.size > 1) Text("Hay ${heads.size} versiones simultáneas. Revisá cuál querés usar; ninguna se borró.", color = MaterialTheme.colorScheme.error)
+        Button(onClick = { resolving = heads.size > 1; publishing = true }, enabled = controller.authorized && !controller.busy && !controller.connecting && repository.persistenceError == null) { Text("Publicar datos de este celular") }
+        versions.asReversed().take(50).forEach { version ->
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text((if (version in heads) "Principal · " else "Anterior · ") + version.name, style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = { downloading = version }, enabled = controller.authorized && !controller.busy && !controller.connecting) { Text("Descargar esta versión") }
+            }
+        }
+        if (versions.size > 50) Text("Se muestran 50 versiones. Las demás permanecen en Drive.", style = MaterialTheme.typography.bodySmall)
+        controller.recoveryUri?.let { uri -> OutlinedButton(onClick = { pendingRecovery = uri; recoveryExport.launch("Respaldo-previo.zip") }) { Text("Exportar respaldo previo a la descarga") } }
+        if (recoveryMessage.isNotBlank()) Text(recoveryMessage)
         Spacer(Modifier.height(12.dp))
     }
     if (confirmDisconnect) AlertDialog(onDismissRequest = { confirmDisconnect = false }, title = { Text("Desconectar Google Drive") }, text = { Text("Se detendrán las actualizaciones de ambas empresas para esta cuenta. Los archivos de Drive se conservan.") }, confirmButton = { TextButton(onClick = { controller.disconnect(); confirmDisconnect = false }) { Text("Desconectar") } }, dismissButton = { TextButton(onClick = { confirmDisconnect = false }) { Text("Cancelar") } })
+    downloading?.let { version -> AlertDialog(onDismissRequest = { downloading = null }, title = { Text("¿Descargar datos de ${empresa.displayName}?") }, text = { Text("Esta versión reemplazará los datos locales de esta empresa, incluidos cambios que no publicaste. Se guardará un respaldo previo exportable. La otra empresa se conserva.\n\n${version.name}") }, confirmButton = { TextButton(onClick = { downloading = null; controller.downloadWorkspace(empresa, version, repository) }) { Text("Descargar y reemplazar") } }, dismissButton = { TextButton(onClick = { downloading = null }) { Text("Cancelar") } }) }
+    if (publishing) AlertDialog(onDismissRequest = { publishing = false }, title = { Text(if (resolving) "¿Usar esta copia como principal?" else "¿Publicar datos completos?") }, text = { Text("Se subirán todos los registros y documentos de ${empresa.displayName} a ${controller.account}." + if (resolving) " La copia de este celular será la principal; las otras versiones se conservarán en el historial." else " Las copias anteriores se conservan. Conectar la cuenta no publica estos datos por sí solo.") }, confirmButton = { TextButton(onClick = { publishing = false; controller.publishWorkspace(empresa, repository, resolving) }) { Text("Publicar copia") } }, dismissButton = { TextButton(onClick = { publishing = false }) { Text("Cancelar") } })
 }

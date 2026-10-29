@@ -68,7 +68,9 @@ class MemoryRepository(
         checkCompany(delivery.id, delivery.empresa) { it.deliveries.map { record -> record.id } }
         checkWorkerReference(delivery.empresa, delivery.workerId)
         val current = data(delivery.empresa)
-        companies[delivery.empresa] = current.copy(deliveries = current.deliveries.upsert(delivery, Delivery::id))
+        val valid = delivery.validSignature()
+        val snapshot = delivery.copy(signature = valid, conformity = delivery.conformity && (delivery.signature == null || valid != null))
+        companies[delivery.empresa] = current.copy(deliveries = current.deliveries.upsert(snapshot, Delivery::id))
         persist()
     }
 
@@ -93,6 +95,16 @@ class MemoryRepository(
     }
 
     fun snapshot(): Map<Empresa, CompanyData> = Empresa.entries.associateWith(::data)
+
+    /** Persist before replacing observable state. A concurrent local edit aborts restoration. */
+    fun replaceCompany(company: Empresa, expected: CompanyData, replacement: CompanyData) {
+        check(data(company) == expected) { "Los datos cambiaron durante la descarga. Volvé a intentarlo para conservar la edición local." }
+        val candidate = snapshot() + (company to replacement)
+        MemoryRepository(seedDemoData = false, initialData = candidate)
+        onChanged(candidate)
+        companies[company] = replacement
+        persistenceError = null
+    }
 
     private fun persist() {
         if (!ready) return

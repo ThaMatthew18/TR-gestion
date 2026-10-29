@@ -185,7 +185,7 @@ private fun CompanySelection(onSelect: (Empresa) -> Unit) {
                     Text("Los registros de cada empresa se mantienen separados", color = Muted, fontSize = 12.sp, lineHeight = 18.sp)
                 }
                 Spacer(Modifier.height(24.dp))
-                Text("GESTIÓN DE PERSONAL · VERSIÓN 1.2", fontSize = 10.sp, letterSpacing = 1.sp, color = Muted)
+                Text("GESTIÓN DE PERSONAL · VERSIÓN 1.6", fontSize = 10.sp, letterSpacing = 1.sp, color = Muted)
                 Text("Incluye ejemplos ficticios. Los registros se conservan en el dispositivo. Conectá tu cuenta desde Google Drive para actualizar documentos.", color = Muted, fontSize = 11.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 8.dp))
             }
         }

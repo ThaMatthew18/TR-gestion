@@ -44,15 +44,19 @@ data class Worker(
         reentries = history.toList()
     )
 
-    fun isActive(today: LocalDate = LocalDate.now()): Boolean {
+    fun employmentDates(today: LocalDate = LocalDate.now()): Pair<String, String> {
         val lastEnd = fields["baja"].orEmpty()
         val end = parseDate(lastEnd)
         val latest = reentryHistory.mapIndexedNotNull { index, entry ->
             val start = parseDate(entry.date) ?: return@mapIndexedNotNull null
             if (start.isAfter(today) || (end != null && !start.isAfter(end))) null else Triple(start, index, entry)
         }.sortedWith(compareBy<Triple<LocalDate, Int, Reentry>> { it.first }.thenBy { it.second }).lastOrNull()?.third
-        if (latest != null) return latest.endDate.isBlank() || (parseDate(latest.endDate)?.isAfter(today) == true)
-        return lastEnd.isBlank() || end?.isAfter(today) == true
+        return if (latest != null) latest.date to latest.endDate else fields["alta"].orEmpty() to lastEnd
+    }
+
+    fun isActive(today: LocalDate = LocalDate.now()): Boolean {
+        val end = employmentDates(today).second
+        return end.isBlank() || parseDate(end)?.isAfter(today) == true
     }
 
     val displayName: String
@@ -81,8 +85,20 @@ data class Delivery(
     val conformity: Boolean = false,
     val notes: String = "",
     val receiptName: String = "",
-    val receiptUri: String = ""
+    val receiptUri: String = "",
+    val signature: ReceiptSignature? = null
 )
+
+data class InkPoint(val x: Float, val y: Float)
+data class ReceiptSignature(val name: String, val document: String, val signedAt: String, val payloadHash: String, val strokes: List<List<InkPoint>>)
+
+fun Delivery.signingHash(): String {
+    val payload = listOf(id, empresa.name, workerId, kind.name, item, size, date, quantity, notes, conformity.toString()).joinToString("") { "${it.length}:$it" }
+    return java.security.MessageDigest.getInstance("SHA-256").digest(payload.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+}
+
+fun ReceiptSignature.hasInk(): Boolean = strokes.all { stroke -> stroke.all { it.x.isFinite() && it.y.isFinite() && it.x in 0f..1f && it.y in 0f..1f } } && strokes.any { stroke -> stroke.size > 1 && stroke.zipWithNext().sumOf { (a, b) -> kotlin.math.hypot((a.x - b.x).toDouble(), (a.y - b.y).toDouble()) } > 0.01 }
+fun Delivery.validSignature(): ReceiptSignature? = signature?.takeIf { it.payloadHash == signingHash() && it.hasInk() }
 
 enum class TrainingStatus { VIGENTE, POR_VENCER, VENCIDA, SIN_FECHA, PROGRAMADA }
 

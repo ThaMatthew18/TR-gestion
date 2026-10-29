@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import uy.gestionpersonal.data.*
+import uy.gestionpersonal.reports.rememberReceiptExporter
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -35,6 +36,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun DeliveriesScreen(empresa: Empresa, repository: MemoryRepository, kind: DeliveryKind) {
     val context = LocalContext.current
+    val exportReceipt = rememberReceiptExporter()
     val data = repository.data(empresa)
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf("") }
@@ -73,6 +75,8 @@ fun DeliveriesScreen(empresa: Empresa, repository: MemoryRepository, kind: Deliv
                             }) { Text("Constancia") }
                             TextButton(onClick = { deleting = record }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
                         }
+                        TextButton(onClick = { exportReceipt(record, data.workers.find { it.id == record.workerId }) }) { Text("Exportar constancia PDF") }
+                        if (record.validSignature() != null) Text("Firma de recepción guardada", color = Teal, fontSize = 12.sp)
                     }
                 }
             }
@@ -85,6 +89,9 @@ fun DeliveriesScreen(empresa: Empresa, repository: MemoryRepository, kind: Deliv
 @Composable
 private fun DeliveryForm(empresa: Empresa, kind: DeliveryKind, workers: List<Worker>, existing: Delivery?, onDismiss: () -> Unit, onSave: (Delivery) -> Unit) {
     val context = LocalContext.current
+    val deliveryId = remember { existing?.id ?: newId() }
+    var signature by remember { mutableStateOf(existing?.signature) }
+    var signing by remember { mutableStateOf(false) }
     var worker by remember { mutableStateOf(existing?.workerId.orEmpty()) }
     var item by remember { mutableStateOf(existing?.item.orEmpty()) }
     var size by remember { mutableStateOf(existing?.size.orEmpty()) }
@@ -97,6 +104,11 @@ private fun DeliveryForm(empresa: Empresa, kind: DeliveryKind, workers: List<Wor
     var fileError by remember { mutableStateOf("") }
     var importing by remember { mutableStateOf(false) }
     val importScope = rememberCoroutineScope()
+    val exportReceipt = rememberReceiptExporter()
+    fun draft() = Delivery(deliveryId, empresa, worker, kind, item, size, date, quantity, conformity, notes, receiptName, receiptUri, signature)
+    LaunchedEffect(draft().signingHash()) {
+        if (signature != null && draft().validSignature() == null) { signature = null; conformity = false; fileError = "Los datos de la entrega cambiaron. Volvé a registrar la conformidad y la firma." }
+    }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             importScope.launch {
@@ -110,7 +122,7 @@ private fun DeliveryForm(empresa: Empresa, kind: DeliveryKind, workers: List<Wor
         }
     }
     SafetyFormDialog(if (existing == null) "Registrar entrega" else "Editar entrega", onDismiss, canSave = !importing, onSave = {
-        onSave(Delivery(id = existing?.id ?: newId(), empresa = empresa, workerId = worker, kind = kind, item = item, size = size, date = date, quantity = quantity, conformity = conformity, notes = notes, receiptName = receiptName, receiptUri = receiptUri))
+        onSave(draft())
     }) {
         Text("${empresa.displayName} · ${if (kind == DeliveryKind.EPP) "EPP" else "Uniformes"}", color = Teal, fontWeight = FontWeight.SemiBold)
         Text("Todos los campos son opcionales. Podés completar la información después.", fontSize = 12.sp, color = Muted)
@@ -128,7 +140,15 @@ private fun DeliveryForm(empresa: Empresa, kind: DeliveryKind, workers: List<Wor
         if (receiptName.isNotBlank()) { Text(receiptName, color = Teal, fontSize = 12.sp); TextButton(onClick = { receiptName = ""; receiptUri = "" }) { Text("Quitar adjunto") } }
         if (fileError.isNotBlank()) Text(fileError, color = MaterialTheme.colorScheme.error)
         OutlinedTextField(notes, { notes = it }, label = { Text("Observaciones") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
+        HorizontalDivider()
+        Text("Firma de recepción", fontWeight = FontWeight.SemiBold)
+        Text(if (draft().validSignature() != null) "Firma guardada: ${signature?.name.orEmpty()}" else if (signature != null) "Los datos cambiaron. Volvé a firmar esta entrega." else "Todavía no hay una firma capturada.", color = Muted, fontSize = 12.sp)
+        OutlinedButton(onClick = { signing = true }, enabled = !importing) { Text("Firmar en la pantalla") }
+        if (signature != null) TextButton(onClick = { signature = null }) { Text("Quitar firma") }
+        OutlinedButton(onClick = { exportReceipt(draft(), workers.find { it.id == worker }) }, enabled = !importing) { Text("Generar constancia PDF") }
+        Text("Guardá la entrega para conservar la firma. También podés exportar la constancia sin firma para completarla en papel.", fontSize = 12.sp, color = Muted)
     }
+    if (signing) SignatureDialog(draft(), workers.find { it.id == worker }, onDismiss = { signing = false }, onSigned = { signature = it; conformity = true; signing = false })
 }
 
 @Composable

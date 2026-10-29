@@ -33,11 +33,13 @@ fun rememberWorkerExporter(empresa: Empresa, repository: MemoryRepository): Work
                     output.use {
                         when (request.format) {
                             WorkerExportFormat.PDF -> exportWorkerPdf(context, it, request.worker, request.source)
+                            WorkerExportFormat.COMPLETE_PDF -> exportCompleteWorkerPdf(context, it, request.worker, request.source)
+                            WorkerExportFormat.PACKAGE -> exportWorkerPackage(context, it, request.worker, request.source)
                             WorkerExportFormat.EXCEL -> writeWorkerExcel(it, request.worker, request.source)
                         }
                     }
                 }
-                Toast.makeText(context, if (request.format == WorkerExportFormat.PDF) "Ficha PDF guardada" else "Ficha Excel guardada", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Exportación guardada", Toast.LENGTH_LONG).show()
             } catch (failure: Exception) {
                 if (failure is CancellationException) throw failure
                 Toast.makeText(context, "No se pudo guardar la ficha: ${failure.localizedMessage}", Toast.LENGTH_LONG).show()
@@ -46,6 +48,8 @@ fun rememberWorkerExporter(empresa: Empresa, repository: MemoryRepository): Work
     }
     val pdf = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(WorkerExportFormat.PDF.mime), save)
     val excel = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(WorkerExportFormat.EXCEL.mime), save)
+    val complete = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf"), save)
+    val archive = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip"), save)
     return WorkerExporter(busy) { worker, format ->
         require(worker.empresa == empresa) { "El trabajador pertenece a otra empresa." }
         if (!busy) {
@@ -54,7 +58,7 @@ fun rememberWorkerExporter(empresa: Empresa, repository: MemoryRepository): Work
             val snapshot = source.copy(workers = source.workers.filterNot { it.id == draft.id } + draft)
             pending = WorkerExportRequest(draft, snapshot, format)
             val filename = workerExportFilename(draft, format)
-            if (format == WorkerExportFormat.PDF) pdf.launch(filename) else excel.launch(filename)
+            when (format) { WorkerExportFormat.PDF -> pdf.launch(filename); WorkerExportFormat.EXCEL -> excel.launch(filename); WorkerExportFormat.COMPLETE_PDF -> complete.launch(filename); WorkerExportFormat.PACKAGE -> archive.launch(filename) }
         }
     }
 }

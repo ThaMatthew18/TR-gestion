@@ -91,6 +91,8 @@ fun ReportesScreen(empresa: Empresa, repository: MemoryRepository) {
     ) {
         Text("Reportes", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text("Información de ${empresa.displayName} lista para compartir.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        GeneralRosterSection(empresa, repository)
+        HorizontalDivider()
 
         Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -133,6 +135,8 @@ fun ReportesScreen(empresa: Empresa, repository: MemoryRepository) {
         Text("Resumen de los seis bloques, referencias y hasta tres miniaturas. El historial de reingresos agrega un anexo cuando necesita más espacio o contiene observaciones. Los otros históricos se resumen; Excel conserva los datos completos y los archivos originales se mantienen por separado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Text("El Excel individual incluye una ficha por bloques, adjuntos y los históricos completos del trabajador seleccionado.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = { selectedWorker?.let { individualExporter.export(it, WorkerExportFormat.COMPLETE_PDF) } }, enabled = !busy && !individualExporter.busy && selectedWorker != null, modifier = Modifier.fillMaxWidth()) { Text("PDF completo con documentos") }
+        OutlinedButton(onClick = { selectedWorker?.let { individualExporter.export(it, WorkerExportFormat.PACKAGE) } }, enabled = !busy && !individualExporter.busy && selectedWorker != null, modifier = Modifier.fillMaxWidth()) { Text("ZIP con archivos originales") }
         if (busy || individualExporter.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (feedback.isNotBlank()) {
             Surface(shape = RoundedCornerShape(14.dp), color = if (hasError) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer) {

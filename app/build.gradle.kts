@@ -9,8 +9,8 @@ android {
         applicationId = "uy.gestionpersonal"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.4-historial"
+        versionCode = 7
+        versionName = "1.6-ficha-general"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

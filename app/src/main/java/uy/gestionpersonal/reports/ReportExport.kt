@@ -21,12 +21,14 @@ data class ReportSelection(
 
 enum class WorkerExportFormat(val extension: String, val mime: String) {
     PDF("pdf", "application/pdf"),
+    COMPLETE_PDF("pdf", "application/pdf"),
+    PACKAGE("zip", "application/zip"),
     EXCEL("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 }
 
 fun workerExportFilename(worker: Worker, format: WorkerExportFormat): String {
     val name = worker.displayName.map { if (it.isLetterOrDigit() || it == '_' || it == '-') it else '_' }.joinToString("").take(70)
-    return "Ficha_${worker.empresa.name}_${name}_${worker.id.takeLast(8)}.${format.extension}"
+    return "${if (format == WorkerExportFormat.COMPLETE_PDF) "Legajo_completo" else if (format == WorkerExportFormat.PACKAGE) "Legajo_originales" else "Ficha"}_${worker.empresa.name}_${name}_${worker.id.takeLast(8)}.${format.extension}"
 }
 
 internal fun workerExportValue(worker: Worker, key: String): String = when (key) {
@@ -174,7 +176,7 @@ private fun reentryRows(workers: List<Worker>): List<List<String>> =
     listOf(listOf("ID trabajador", "Empresa", "Trabajador", "N.º de reingreso", "ID reingreso", "Fecha de reingreso", "Fecha de baja del período", "Observaciones")) +
         workers.flatMap { worker -> worker.reentryHistory.mapIndexed { index, entry -> listOf(worker.id, worker.empresa.displayName, worker.displayName, (index + 1).toString(), entry.id, entry.date, entry.endDate, entry.notes) } }
 
-private fun writeWorkbook(output: OutputStream, sheets: List<Pair<String, List<List<String>>>>) {
+internal fun writeWorkbook(output: OutputStream, sheets: List<Pair<String, List<List<String>>>>) {
     ZipOutputStream(output).use { zip ->
         fun entry(name: String, content: String) {
             zip.putNextEntry(ZipEntry(name))
@@ -193,7 +195,10 @@ private fun writeWorkbook(output: OutputStream, sheets: List<Pair<String, List<L
             val content = buildString {
                 append(declaration)
                 append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><dimension ref=\"A1:$lastCell\"/><sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews><cols>")
-                if (sheetName == "Ficha") append("<col min=\"1\" max=\"1\" width=\"40\" customWidth=\"1\"/><col min=\"2\" max=\"2\" width=\"72\" customWidth=\"1\"/>")
+                if (sheetName == "Empleados") {
+                    val widths = (if (rows.firstOrNull()?.firstOrNull() == "Empresa") listOf(18) else emptyList()) + listOf(18, 24, 24, 34, 25, 16, 16, 38)
+                    widths.forEachIndexed { c, w -> append("<col min=\"${c + 1}\" max=\"${c + 1}\" width=\"$w\" customWidth=\"1\"/>") }
+                } else if (sheetName == "Ficha") append("<col min=\"1\" max=\"1\" width=\"40\" customWidth=\"1\"/><col min=\"2\" max=\"2\" width=\"72\" customWidth=\"1\"/>")
                 else append("<col min=\"1\" max=\"$width\" width=\"24\" customWidth=\"1\"/>")
                 append("</cols><sheetData>")
                 rows.forEachIndexed { r, cells ->

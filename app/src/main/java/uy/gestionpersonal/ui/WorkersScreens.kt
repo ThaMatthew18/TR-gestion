@@ -213,6 +213,8 @@ fun LegajosScreen(empresa: Empresa, repository: MemoryRepository) {
                             DropdownMenu(exportMenu, { exportMenu = false }) {
                                 DropdownMenuItem(text = { Text("Exportar ficha PDF") }, onClick = { exportMenu = false; exporter.export(worker, WorkerExportFormat.PDF) })
                                 DropdownMenuItem(text = { Text("Exportar ficha Excel") }, onClick = { exportMenu = false; exporter.export(worker, WorkerExportFormat.EXCEL) })
+                                DropdownMenuItem(text = { Text("PDF completo con documentos") }, onClick = { exportMenu = false; exporter.export(worker, WorkerExportFormat.COMPLETE_PDF) })
+                                DropdownMenuItem(text = { Text("ZIP con archivos originales") }, onClick = { exportMenu = false; exporter.export(worker, WorkerExportFormat.PACKAGE) })
                             }
                         }
                         IconButton(onClick = { editor = worker }) { Icon(Icons.Outlined.Edit, "Editar documentos de ${worker.displayName}", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -294,6 +296,8 @@ private fun WorkerEditorDialog(worker: Worker, repository: MemoryRepository, onD
                         DropdownMenu(exportMenu, { exportMenu = false }) {
                             DropdownMenuItem(text = { Text("Exportar ficha PDF") }, onClick = { exportMenu = false; exporter.export(draftWorker(), WorkerExportFormat.PDF) })
                             DropdownMenuItem(text = { Text("Exportar ficha Excel") }, onClick = { exportMenu = false; exporter.export(draftWorker(), WorkerExportFormat.EXCEL) })
+                            DropdownMenuItem(text = { Text("PDF completo con documentos") }, onClick = { exportMenu = false; exporter.export(draftWorker(), WorkerExportFormat.COMPLETE_PDF) })
+                            DropdownMenuItem(text = { Text("ZIP con archivos originales") }, onClick = { exportMenu = false; exporter.export(draftWorker(), WorkerExportFormat.PACKAGE) })
                         }
                     }
                     IconButton(onClick = dismiss) { Icon(Icons.Outlined.Close, "Cerrar ficha") }

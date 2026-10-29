@@ -38,10 +38,13 @@ class DriveHttp(private val token: String, private val checkActive: () -> Unit =
         return if (files.length() == 0) null else files.getJSONObject(0)
     }
 
-    override fun upload(document: DriveDocument, content: DriveContent, parentId: String, existingId: String?): RemoteDriveFile {
+    override fun upload(document: DriveDocument, content: DriveContent, parentId: String, existingId: String?): RemoteDriveFile = uploadData(document, content, parentId, existingId)
+
+    private fun uploadData(document: DriveDocument, content: DriveContent, parentId: String, existingId: String?, parents: Set<String>? = null): RemoteDriveFile {
         safeId(parentId)
         existingId?.let(::safeId)
         val metadata = JSONObject().put("name", document.name).put("appProperties", properties(document.key).put("gpSha256", content.sha256).put("gpCompany", document.empresa.name))
+        parents?.forEachIndexed { index, id -> safeId(id); require(id.length <= 120); metadata.getJSONObject("appProperties").put("gpParent$index", id) }
         if (existingId == null) metadata.put("parents", org.json.JSONArray(listOf(parentId)))
         val url = "https://www.googleapis.com/upload/drive/v3/files" + (existingId?.let { "/$it" } ?: "") + "?uploadType=resumable&fields=id,name,appProperties"
         val initial = connection(if (existingId == null) "POST" else "PATCH", url)
@@ -112,6 +115,44 @@ class DriveHttp(private val token: String, private val checkActive: () -> Unit =
     }
 
     private fun properties(key: String) = JSONObject().put("gpNamespace", DRIVE_NAMESPACE).put("gpKey", key)
+
+    private fun workspaceFolder(company: uy.gestionpersonal.data.Empresa): String {
+        val root = folder("root", "Gestión de Personal")
+        return folder("empresa:${company.name}", company.displayName, root)
+    }
+
+    fun workspaceRevisions(company: uy.gestionpersonal.data.Empresa): List<WorkspaceRevision> {
+        val parent = workspaceFolder(company)
+        val key = DriveDocument(company, "workspace", "", "workspace", "", "").key
+        val query = "trashed=false and '$parent' in parents and appProperties has { key='gpNamespace' and value='$DRIVE_NAMESPACE' } and appProperties has { key='gpKey' and value='$key' }"
+        val revisions = mutableListOf<WorkspaceRevision>()
+        var page = ""
+        do {
+            val result = json("GET", "$api?q=${encode(query)}&fields=files(id,name,appProperties,sha256Checksum),nextPageToken&pageSize=1000" + if (page.isBlank()) "" else "&pageToken=${encode(page)}")
+            val files = result.getJSONArray("files")
+            (0 until files.length()).forEach { index -> val f = files.getJSONObject(index); val props = f.getJSONObject("appProperties"); val parents = (0..9).mapNotNull { props.optString("gpParent$it").takeIf(String::isNotBlank) }.toSet(); revisions.add(WorkspaceRevision(f.getString("id"), parents, f.getString("name"), f.optString("sha256Checksum"))) }
+            page = result.optString("nextPageToken")
+            require(revisions.size <= 10000) { "El historial supera el límite de esta versión" }
+        } while (page.isNotBlank())
+        return revisions
+    }
+
+    fun publishWorkspace(company: uy.gestionpersonal.data.Empresa, content: DriveContent, parents: Set<String>): WorkspaceRevision {
+        require(parents.size <= 10)
+        val name = "Datos-${company.name}-${java.time.Instant.now().toString().replace(':', '-')}-${java.util.UUID.randomUUID().toString().take(8)}.zip"
+        val document = DriveDocument(company, "workspace", "Datos compartidos", "workspace", name, "")
+        // Workspace keys are company-scoped, and every upload creates a new immutable file.
+        val keyDocument = document.copy(slot = "workspace")
+        val remote = uploadData(keyDocument, content, workspaceFolder(company), null, parents)
+        return WorkspaceRevision(remote.id, parents, name, content.sha256)
+    }
+
+    fun downloadWorkspace(id: String, output: java.io.OutputStream) {
+        safeId(id)
+        val request = connection("GET", "$api/$id?alt=media")
+        try { requireSuccess(request); request.inputStream.use { input -> val buffer = ByteArray(65536); var total = 0L; while (true) { val n = input.read(buffer); if (n < 0) break; total += n; require(total <= 200L * 1024 * 1024) { "La copia supera 200 MB" }; output.write(buffer, 0, n) } } }
+        finally { request.disconnect() }
+    }
     private fun encode(value: String) = URLEncoder.encode(value, "UTF-8")
     private fun safeId(value: String) { require(value.matches(Regex("[A-Za-z0-9_-]+"))) { "Identificador de Drive no válido." } }
 }

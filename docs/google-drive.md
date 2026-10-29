@@ -42,10 +42,15 @@ El cliente Android se identifica por paquete y certificado. No hay que introduci
 - Quitar un adjunto o trabajador de la app no elimina sus archivos de Drive. Desconectar tampoco borra archivos de Drive.
 - Los originales seleccionados se copian al almacenamiento privado de la app. Las referencias y los registros se guardan de forma atómica en el dispositivo. Desinstalar la app o borrar sus datos elimina ese almacenamiento local; Drive conserva lo que ya se haya subido.
 - La autorización utiliza Google Identity Services y `drive.file`. Los tokens se mantienen en memoria durante cada operación y no se escriben en los datos del proyecto. El usuario puede desconectar la cuenta desde la app o quitar su permiso desde su cuenta de Google.
-- La implementación no restaura legajos completos desde Drive ni combina cambios de varios dispositivos. Para eso hace falta una etapa adicional de sincronización de registros y resolución de conflictos.
+- La versión 1.5 agrega copias completas por empresa con publicación y descarga manuales entre celulares que elijan la misma cuenta. Incluyen fichas, reingresos, entregas, firmas, capacitaciones y documentos. Se publica una versión inmutable nueva; no se modifica o borra una versión anterior.
+- Consultar versiones no descarga ni reemplaza datos. Descargar exige confirmación y crea un respaldo local previo exportable. La importación comprueba empresa, SHA-256, referencias de archivos, rutas permitidas e identificadores. Si la copia está dañada, pertenece a otra empresa, falla la escritura o hubo una edición local durante la descarga, se conservan los registros locales.
+- Para publicar después de trabajar en otro dispositivo hay que descargar primero una versión principal. Dos publicaciones simultáneas conservan ambas versiones y se muestran como conflicto. La resolución explícita publica la copia local como principal y conserva las alternativas en el historial. No se fusionan registros automáticamente ni se implementa colaboración en tiempo real o permisos por usuario.
+- La primera validación real pendiente debe cubrir dos dispositivos: publicar, descargar, editar/publicar, intentar publicar desde una base anterior, revisar un conflicto, restaurar documentos y exportar el respaldo previo. Hasta completar OAuth y esa prueba, esta función se considera preparada y sin validación real en Google.
 
 ## Referencias oficiales
 
 - [Autorización de Google en Android y registro del cliente](https://developer.android.com/identity/authorization).
 - [Permisos de Google Drive](https://developers.google.com/workspace/drive/api/guides/api-specific-auth).
 - [Carga y actualización de archivos](https://developers.google.com/workspace/drive/api/guides/manage-uploads).
+- [Listado de archivos y metadatos de versiones](https://developers.google.com/workspace/drive/api/reference/rest/v3/files/list).
+- [Descarga de archivos](https://developers.google.com/workspace/drive/api/reference/rest/v3/files/get).

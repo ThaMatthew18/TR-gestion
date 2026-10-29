@@ -22,6 +22,11 @@ class DriveController(context: Context, preferencesName: String = "drive-connect
     private var pendingAccount: String? = null
     private val queue = linkedMapOf<Empresa, CompanyData>()
     private var job: Job? = null
+    private var workspaceBusy = false
+    var workspaceVersions by mutableStateOf<Map<Empresa, List<WorkspaceRevision>>>(emptyMap())
+        private set
+    var recoveryUri by mutableStateOf(preferences.getString("recoveryUri", null))
+        private set
     var account by mutableStateOf(preferences.getString("account", null))
         private set
     var authorized by mutableStateOf(false)
@@ -80,7 +85,7 @@ class DriveController(context: Context, preferencesName: String = "drive-connect
 
     private fun acceptAuthorization(name: String, result: AuthorizationResult) {
         check(DRIVE_SCOPE in result.grantedScopes && !result.accessToken.isNullOrBlank()) { "No se concedió el permiso para guardar archivos en Drive." }
-        if (account != name) { disableAutomatic(); folders = emptyMap() }
+        if (account != name) { disableAutomatic(); folders = emptyMap(); workspaceVersions = emptyMap() }
         account = name
         preferences.edit().putString("account", name).apply()
         authorized = true; connecting = false; pendingAccount = null
@@ -112,7 +117,7 @@ class DriveController(context: Context, preferencesName: String = "drive-connect
         if (busy || connecting) return
         val old = account ?: return
         connecting = true
-        disableAutomatic(); queue.clear(); folders = emptyMap()
+        disableAutomatic(); queue.clear(); folders = emptyMap(); workspaceVersions = emptyMap()
         authorized = false; account = null; preferences.edit().remove("account").apply()
         scope.launch {
             try {
@@ -131,6 +136,7 @@ class DriveController(context: Context, preferencesName: String = "drive-connect
     }
 
     fun sync(empresa: Empresa, source: CompanyData) {
+        if (workspaceBusy) return
         if (!authorized || connecting || account == null) return
         if (driveDocuments(empresa, source).isEmpty()) return
         queue[empresa] = source
@@ -176,6 +182,87 @@ class DriveController(context: Context, preferencesName: String = "drive-connect
                 message = failure.message?.take(240) ?: "No se pudo actualizar Drive. Los archivos locales se conservan; reintentá la sincronización."
             } finally { busy = false }
         }
+    }
+
+    private fun workspaceAction(action: suspend (DriveHttp, String) -> Unit) {
+        if (!authorized || connecting || busy || account == null) return
+        val selected = account!!
+        job = scope.launch {
+            busy = true; workspaceBusy = true
+            try {
+                val authorization = client.authorize(request(selected)).awaitResult()
+                check(!authorization.hasResolution() && DRIVE_SCOPE in authorization.grantedScopes && !authorization.accessToken.isNullOrBlank()) { "Volvé a autorizar la cuenta para acceder a los datos compartidos." }
+                val coroutine = currentCoroutineContext()
+                action(DriveHttp(authorization.accessToken!!) { coroutine.ensureActive() }, selected)
+                error = false
+            } catch (failure: Exception) {
+                if (failure is CancellationException) throw failure
+                if (failure is DriveHttpError && failure.status == 401) authorized = false
+                error = true; message = failure.message?.take(300) ?: "No se pudo completar la operación. Los datos locales se conservan."
+            } finally { busy = false; workspaceBusy = false }
+        }
+    }
+
+    fun refreshWorkspace(company: Empresa) = workspaceAction { gateway, _ ->
+        val versions = withContext(Dispatchers.IO) { gateway.workspaceRevisions(company) }
+        workspaceVersions = workspaceVersions + (company to versions)
+        val heads = workspaceHeads(versions)
+        message = if (heads.isEmpty()) "Todavía no hay una copia compartida de ${company.displayName}. Podés publicar la de este celular." else "${heads.size} versión(es) principal(es) disponibles. Revisá el historial antes de descargar o publicar."
+    }
+
+    fun publishWorkspace(company: Empresa, repository: MemoryRepository, resolve: Boolean = false) = workspaceAction { gateway, selected ->
+        check(repository.persistenceError == null) { "Primero resolvé el guardado local." }
+        val source = repository.data(company)
+        val file = java.io.File.createTempFile("workspace-", ".zip", context.cacheDir)
+        try {
+            val revisions = withContext(Dispatchers.IO) { gateway.workspaceRevisions(company) }
+            workspaceVersions = workspaceVersions + (company to revisions)
+            val base = preferences.getString("base:$selected:${company.name}", null)
+            val parents = workspacePublishParents(revisions, base, resolve)
+            val revision = withContext(Dispatchers.IO) {
+                file.outputStream().use { writeCompanyArchive(context, it, company, source) }
+                val content = fileContent(file)
+                gateway.publishWorkspace(company, content, parents)
+            }
+            preferences.edit().putString("base:$selected:${company.name}", revision.id).apply()
+            val updated = withContext(Dispatchers.IO) { gateway.workspaceRevisions(company) }
+            workspaceVersions = workspaceVersions + (company to updated)
+            check(updated.any { it.id == revision.id } && workspaceHeads(updated).size == 1) { "La copia se publicó, pero hay versiones simultáneas o Drive aún no la muestra. Actualizá el historial; ninguna versión anterior fue borrada." }
+            message = "Copia completa publicada para $selected. En el otro celular elegí esa cuenta y descargá esta versión." + if (repository.data(company) != source) " Hay cambios locales posteriores que todavía no se publicaron." else ""
+        } finally { file.delete() }
+    }
+
+    fun downloadWorkspace(company: Empresa, revision: WorkspaceRevision, repository: MemoryRepository) = workspaceAction { gateway, selected ->
+        check(repository.persistenceError == null) { "Primero resolvé el guardado local." }
+        val expected = repository.data(company)
+        val file = java.io.File.createTempFile("download-", ".zip", context.cacheDir)
+        var prepared: PreparedCompany? = null
+        var committed = false
+        try {
+            withContext(Dispatchers.IO) {
+                val available = gateway.workspaceRevisions(company)
+                check(available.any { it.id == revision.id && it.sha256 == revision.sha256 }) { "La versión no está disponible para esta empresa" }
+                file.outputStream().use { gateway.downloadWorkspace(revision.id, it) }
+                check(revision.sha256.isNotBlank() && fileContent(file).sha256 == revision.sha256) { "La copia descargada no pasó la verificación de integridad" }
+                prepared = file.inputStream().use { readCompanyArchive(context, it, company) }
+                val directory = java.io.File(context.filesDir, "documents").apply { check(exists() || mkdirs()) }
+                val backup = java.io.File(directory, "Respaldo-${company.name}-${java.util.UUID.randomUUID()}.zip")
+                try { backup.outputStream().use { writeCompanyArchive(context, it, company, expected) } }
+                catch (failure: Exception) { backup.delete(); throw failure }
+                recoveryUri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.files", backup).toString()
+                preferences.edit().putString("recoveryUri", recoveryUri).apply()
+            }
+            repository.replaceCompany(company, expected, prepared!!.data)
+            committed = true
+            preferences.edit().putString("base:$selected:${company.name}", revision.id).apply()
+            message = "${company.displayName}: datos y documentos restaurados. Se conservó una copia local anterior que podés exportar. La otra empresa no cambió."
+        } finally { if (!committed) prepared?.discard(); file.delete() }
+    }
+
+    private fun fileContent(file: java.io.File): DriveContent {
+        val hash = java.security.MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input -> val buffer = ByteArray(65536); while (true) { val n = input.read(buffer); if (n < 0) break; hash.update(buffer, 0, n) } }
+        return DriveContent("application/zip", file.length(), hash.digest().joinToString("") { "%02x".format(it) }) { file.inputStream() }
     }
 
     private fun request(name: String) = AuthorizationRequest.builder().setAccount(Account(name, "com.google")).setRequestedScopes(listOf(Scope(DRIVE_SCOPE))).build()
